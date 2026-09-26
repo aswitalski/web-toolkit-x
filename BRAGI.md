@@ -23,9 +23,9 @@ Bragi is a templating engine, allowing to express rendered content by objects, a
     class: ['link', {
       'highlighted': highlighted,
     }],
-    href: 'https://www.opera.com',
+    href: 'https://example.com',
   },
-  'Opera',
+  'Example',
 ]
 ```
 

@@ -5,7 +5,7 @@
 ```js
 class Toggle extends opr.Toolkit.WebComponent {
 
-  static elementName = 'opr-toogle';
+  static elementName = 'settings-toggle';
 
   static styles = [
     'styles/toggle.css',
