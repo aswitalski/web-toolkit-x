@@ -10,5 +10,4 @@ toolkit.configure({
   debug,
   plugins: debug ? [logger] : [],
 })
-await toolkit.render(Demo, document.querySelector('#left')!)
-await toolkit.render(Demo, document.querySelector('#right')!)
+await toolkit.render(Demo, document.querySelector('app')!)
