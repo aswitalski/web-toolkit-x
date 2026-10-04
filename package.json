@@ -6,17 +6,14 @@
   "scripts": {
     "typecheck": "node node_modules/typescript-7/lib/tsc.js -p . && node node_modules/typescript-7/lib/tsc.js -p test && node node_modules/typescript-7/lib/tsc.js -p demo",
     "test": "vitest run",
-    "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "bench": "vitest bench --run --reporter=verbose",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "build": "tsdown",
-    "demo": "vite demo",
-    "demo:release": "npm run build && vite demo --mode release",
-    "update-opera": "npm run build && cp dist/toolkit-0.69.0.js dist/toolkit-0.69.0.js.map $WORK_DIR",
-    "watch": "npm-watch update-opera",
+    "dev": "tsdown --watch",
+    "verify": "npm run build && npm run typecheck && npm run lint && prettier --check .",
+    "demo": "npm run build && vite demo --mode release",
     "prepare": "simple-git-hooks"
   },
   "repository": {
@@ -46,7 +43,6 @@
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.12.0",
     "lint-staged": "^17.6.0",
-    "npm-watch": "^0.13.0",
     "playwright": "^1.63.0",
     "prettier": "^3.9.9",
     "publint": "^0.3.24",
@@ -58,27 +54,17 @@
     "vite": "^8.3.1",
     "vitest": "^5.0.2"
   },
-  "watch": {
-    "update-opera": {
-      "patterns": [
-        "src",
-        "test"
-      ],
-      "extensions": "js,ts",
-      "quiet": true
-    }
-  },
   "type": "module",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/release/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./dist/release/index.d.ts",
+      "default": "./dist/release/index.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
-    "dist",
+    "dist/release",
     "src"
   ],
   "allowScripts": {

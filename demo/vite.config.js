@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       toolkit: resolve(
-        mode === 'release' ? '../dist/index.js' : '../src/index.ts',
+        mode === 'release' ? '../dist/release/index.js' : '../src/index.ts',
       ),
     },
   },

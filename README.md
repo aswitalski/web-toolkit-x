@@ -127,21 +127,22 @@ Web Components take the types of props, state and the Commands API: `WebComponen
 npm run build
 ```
 
-It creates:
+It creates in `dist/release`:
 
-- `dist/index.js` - an ES module with type declarations in `dist/index.d.ts`,
-- `dist/toolkit-<version>.js` - a single script exposing the `toolkit` global,
+- `index.js` - an ES module with type declarations in `index.d.ts`,
+- `toolkit-<version>.js` - a single script exposing the `toolkit` global,
 
 both with source maps, and a declaration map leading editors to the TypeScript sources.
+
+`npm run dev` creates the same files in `dist/dev` and builds them again on every change.
 
 ## Demo
 
 ```sh
-npm run demo          # debug mode, using the sources
-npm run demo:release  # release mode, using the ES module build
+npm run demo
 ```
 
-The debug mode uses the logger plugin, showing the executed commands, the patches applied to the DOM and the time taken by each update.
+It builds Toolkit and runs the demo with the ES module build.
 
 ## Development
 
@@ -153,17 +154,16 @@ npm install
 npx playwright install chromium  # once, for running the tests
 ```
 
-| Command                | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `npm test`             | runs the tests in Chromium with Vitest             |
-| `npm run test:watch`   | runs the tests on every change                     |
-| `npm run coverage`     | runs the tests with the coverage report            |
-| `npm run bench`        | runs the benchmarks                                |
-| `npm run typecheck`    | checks the types with TypeScript                   |
-| `npm run lint`         | lints the code with ESLint                         |
-| `npm run format`       | formats the code with Prettier                     |
-| `npm run build`        | builds Toolkit into `dist`                         |
-| `npm run update-opera` | builds and copies the single script to `$WORK_DIR` |
-| `npm run watch`        | runs `update-opera` on every change                |
+| Command             | Description                                                         |
+| ------------------- | ------------------------------------------------------------------- |
+| `npm test`          | runs the tests in Chromium with Vitest                              |
+| `npm run build`     | builds Toolkit into `dist/release`                                  |
+| `npm run dev`       | builds Toolkit into `dist/dev` on every change                      |
+| `npm run typecheck` | checks the types with TypeScript                                    |
+| `npm run lint`      | lints the code with ESLint                                          |
+| `npm run verify`    | runs the build, the type check, the linter and the formatting check |
+| `npm run format`    | formats the code with Prettier                                      |
+| `npm run coverage`  | runs the tests with the coverage report                             |
+| `npm run bench`     | runs the benchmarks                                                 |
 
 Git hooks format and lint the committed files, and run the checks and tests before pushing.
