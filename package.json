@@ -1,6 +1,6 @@
 {
   "name": "web-toolkit-x",
-  "version": "0.70.0",
+  "version": "0.71.0",
   "description": "Web Toolkit X, a Web UI toolkit",
   "scripts": {
     "typecheck": "node node_modules/typescript-7/lib/tsc.js -p . && node node_modules/typescript-7/lib/tsc.js -p test && node node_modules/typescript-7/lib/tsc.js -p demo",

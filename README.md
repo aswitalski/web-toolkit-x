@@ -59,7 +59,7 @@ The types are optional, the same component works in plain JavaScript without the
 Toolkit is also available as a single script, exposing the `toolkit` global:
 
 ```html
-<script src="toolkit-0.70.0.js"></script>
+<script src="toolkit-0.71.0.js"></script>
 ```
 
 The global is typed by the `web-toolkit-x/global` declarations, listed in `types` in `tsconfig.json` or referenced in the scripts using it:
