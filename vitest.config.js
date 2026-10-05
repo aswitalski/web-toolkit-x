@@ -10,7 +10,8 @@ export default defineConfig({
       enabled: true,
       headless: true,
       provider: playwright(),
-      instances: [{ browser: 'chromium' }],
+      // npm test runs Chromium, npm run test:browsers all of them
+      instances: [{ browser: 'chromium' }, { browser: 'firefox' }],
     },
     coverage: {
       provider: 'v8',

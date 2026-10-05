@@ -4,9 +4,10 @@
   "description": "Web Toolkit X, a Web UI toolkit",
   "scripts": {
     "typecheck": "node node_modules/typescript-7/lib/tsc.js -p . && node node_modules/typescript-7/lib/tsc.js -p test && node node_modules/typescript-7/lib/tsc.js -p demo",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage",
-    "bench": "vitest bench --run --reporter=verbose",
+    "test": "vitest run --browser=chromium",
+    "test:browsers": "vitest run",
+    "coverage": "vitest run --coverage --browser=chromium",
+    "bench": "vitest bench --run --reporter=verbose --browser=chromium",
     "lint": "eslint .",
     "format": "prettier --write .",
     "build": "tsdown",

@@ -157,19 +157,20 @@ Toolkit requires Node 24, as defined in `.nvmrc`:
 ```sh
 nvm use
 npm install
-npx playwright install chromium  # once, for running the tests
+npx playwright install chromium firefox  # once, for running the tests
 ```
 
-| Command             | Description                                                         |
-| ------------------- | ------------------------------------------------------------------- |
-| `npm test`          | runs the tests in Chromium with Vitest                              |
-| `npm run build`     | builds Toolkit into `dist/release`                                  |
-| `npm run dev`       | builds Toolkit into `dist/dev` on every change                      |
-| `npm run typecheck` | checks the types with TypeScript                                    |
-| `npm run lint`      | lints the code with ESLint                                          |
-| `npm run verify`    | runs the build, the type check, the linter and the formatting check |
-| `npm run format`    | formats the code with Prettier                                      |
-| `npm run coverage`  | runs the tests with the coverage report                             |
-| `npm run bench`     | runs the benchmarks                                                 |
+| Command                 | Description                                                         |
+| ----------------------- | ------------------------------------------------------------------- |
+| `npm test`              | runs the tests in Chromium with Vitest                              |
+| `npm run test:browsers` | runs the tests in Chromium and Firefox                              |
+| `npm run build`         | builds Toolkit into `dist/release`                                  |
+| `npm run dev`           | builds Toolkit into `dist/dev` on every change                      |
+| `npm run typecheck`     | checks the types with TypeScript                                    |
+| `npm run lint`          | lints the code with ESLint                                          |
+| `npm run verify`        | runs the build, the type check, the linter and the formatting check |
+| `npm run format`        | formats the code with Prettier                                      |
+| `npm run coverage`      | runs the tests in Chromium with the coverage report                 |
+| `npm run bench`         | runs the benchmarks                                                 |
 
 Git hooks format and lint the committed files, and run the checks and tests before pushing.
