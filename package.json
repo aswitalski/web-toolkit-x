@@ -14,6 +14,7 @@
     "dev": "tsdown --watch",
     "verify": "npm run build && npm run typecheck && npm run lint && prettier --check .",
     "demo": "npm run build && vite demo --mode release",
+    "prepublishOnly": "npm run verify",
     "prepare": "simple-git-hooks"
   },
   "repository": {
@@ -65,7 +66,9 @@
   },
   "files": [
     "dist/release",
-    "src"
+    "src",
+    "NOTICE",
+    "AUTHORS"
   ],
   "allowScripts": {
     "simple-git-hooks@2.14.0": true,
