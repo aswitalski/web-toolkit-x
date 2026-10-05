@@ -61,6 +61,9 @@
       "types": "./dist/release/index.d.ts",
       "default": "./dist/release/index.js"
     },
+    "./global": {
+      "types": "./dist/release/global.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "files": [

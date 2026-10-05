@@ -4,7 +4,7 @@ declare global {
   /**
    * The Toolkit exposed to non-module scripts.
    */
-  var toolkit: ToolkitAPI | undefined
+  var toolkit: ToolkitAPI
 }
 
 export {}

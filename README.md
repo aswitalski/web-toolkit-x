@@ -62,6 +62,12 @@ Toolkit is also available as a single script, exposing the `toolkit` global:
 <script src="toolkit-0.70.0.js"></script>
 ```
 
+The global is typed by the `web-toolkit-x/global` declarations, listed in `types` in `tsconfig.json` or referenced in the scripts using it:
+
+```ts
+/// <reference types="web-toolkit-x/global" />
+```
+
 ### Configuration
 
 Toolkit renders without the debug mode and plugins by default. Both can be configured at any time, also after rendering. Options not provided keep their current values. Changed plugins are uninstalled from the created roots and the new ones installed:
@@ -130,7 +136,7 @@ npm run build
 It creates in `dist/release`:
 
 - `index.js` - an ES module with type declarations in `index.d.ts`,
-- `toolkit-<version>.js` - a single script exposing the `toolkit` global,
+- `toolkit-<version>.js` - a single script exposing the `toolkit` global, typed in `global.d.ts`,
 
 both with source maps, and a declaration map leading editors to the TypeScript sources.
 

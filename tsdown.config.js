@@ -17,6 +17,8 @@ export default defineConfig(({ watch }) => {
       sourcemap: true,
       // declaration maps lead editors to the TypeScript sources
       dts: { sourcemap: true },
+      // the global declared by the classic script, imports from index.d.ts
+      copy: 'src/global.d.ts',
       // the package checks look at the release files
       publint: !watch,
       attw: !watch && { profile: 'esm-only' },
