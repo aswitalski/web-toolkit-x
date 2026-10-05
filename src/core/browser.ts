@@ -450,10 +450,27 @@ const EVENTS_WITHOUT_HANDLERS = new Set([
   'touchcancel',
 ])
 
-/* The style properties of the browser, read when first needed. */
+/*
+ * The style properties of the browser, read when first needed. Chromium
+ * defines them on the style object, Firefox on its prototype, so they are
+ * collected up to the CSSStyleDeclaration methods.
+ */
 let supportedStyles: Set<string> | null = null
-const getSupportedStyles = () =>
-  (supportedStyles ??= new Set(Object.keys(document.documentElement.style)))
+const getSupportedStyles = () => {
+  if (!supportedStyles) {
+    supportedStyles = new Set()
+    for (
+      let object: object | null = document.documentElement.style;
+      object && object !== CSSStyleDeclaration.prototype;
+      object = Object.getPrototypeOf(object) as object | null
+    ) {
+      for (const name of Object.getOwnPropertyNames(object)) {
+        supportedStyles.add(name)
+      }
+    }
+  }
+  return supportedStyles
+}
 
 const Browser = {
   /**
