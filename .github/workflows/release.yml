@@ -1,0 +1,42 @@
+name: Release
+
+# Publishes the release commit to npm, started with `gh workflow run release.yml`.
+# npm trusts this workflow, so it publishes without a token and adds provenance.
+on: workflow_dispatch
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency: release
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+      - name: Check the release commit
+        run: |
+          version=$(node -p "require('./package.json').version")
+          subject=$(git log -1 --format=%s)
+          if [ "$GITHUB_REF" != refs/heads/main ]; then
+            echo "::error::Releases are published from main, not $GITHUB_REF"
+            exit 1
+          fi
+          if [ "$subject" != "Release version $version" ]; then
+            echo "::error::The last commit is not the release commit: $subject"
+            exit 1
+          fi
+          if [ -n "$(npm view "web-toolkit-x@$version" version 2>/dev/null)" ]; then
+            echo "::error::Version $version is already published"
+            exit 1
+          fi
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox
+      - run: npm run test:browsers
+      # prepublishOnly runs npm run verify, building the package
+      - run: npm publish
