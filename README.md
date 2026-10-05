@@ -59,7 +59,7 @@ The types are optional, the same component works in plain JavaScript without the
 Toolkit is also available as a single script, exposing the `toolkit` global:
 
 ```html
-<script src="toolkit-0.69.0.js"></script>
+<script src="toolkit-0.70.0.js"></script>
 ```
 
 ### Configuration
