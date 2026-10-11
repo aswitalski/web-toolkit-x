@@ -16,7 +16,7 @@ describe('Update errors', () => {
   })
 
   const renderList = async (Item: typeof Component, items: string[]) => {
-    class List extends toolkit.WebComponent<object, { items: string[] }> {
+    class List extends toolkit.WebComponent<{ items: string[] }> {
       static elementName = `update-errors-list-${counter++}`
 
       getInitialState() {
@@ -88,7 +88,7 @@ describe('Update errors', () => {
         updated()
       }
     }
-    class Label extends toolkit.WebComponent<object, { name: string }> {
+    class Label extends toolkit.WebComponent<{ name: string }> {
       static elementName = `update-errors-label-${counter++}`
 
       getInitialState() {
@@ -153,10 +153,7 @@ describe('Update errors', () => {
 
   it('applies the other patches after a patch throws', async () => {
     // given
-    class Form extends toolkit.WebComponent<
-      object,
-      { value: string; text: string }
-    > {
+    class Form extends toolkit.WebComponent<{ value: string; text: string }> {
       static elementName = `update-errors-form-${counter++}`
 
       getInitialState() {

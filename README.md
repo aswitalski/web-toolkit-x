@@ -31,7 +31,7 @@ const CounterCommands = {
   },
 } satisfies CommandsAPI<State>
 
-class Counter extends WebComponent<Props, State, typeof CounterCommands> {
+class Counter extends WebComponent<State, typeof CounterCommands, Props> {
   static elementName = 'my-counter'
 
   static styles = ['styles/counter.css']
@@ -125,7 +125,9 @@ class Card extends Component<{ title: string }> {
 }
 ```
 
-Web Components take the types of props, state and the Commands API: `WebComponent<Props, State, Commands>`. The Commands API is typed with the state it changes, using `satisfies CommandsAPI<State>`, as in the usage example above.
+Web Components take the types of the state, the Commands API and props: `WebComponent<State, Commands, Props>`, with the Commands API and props optional, as in `WebComponent<State>`. The Commands API is typed with the state it changes, using `satisfies CommandsAPI<State>`, as in the usage example above.
+
+The state can contain only **primitives**, **functions**, **plain objects**, **arrays**, **maps**, **sets**, **dates** and **typed arrays**. Commands record their changes on copies of these objects, sharing the unchanged parts with the previous state, while primitives and functions are just replaced.
 
 ## Build
 

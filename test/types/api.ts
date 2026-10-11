@@ -103,7 +103,7 @@ const OtherCommands = {
 } satisfies CommandsAPI<{ name: string }>
 
 // @ts-expect-error commands change the state of the component
-class Other extends WebComponent<object, StackState, typeof OtherCommands> {}
+class Other extends WebComponent<StackState, typeof OtherCommands> {}
 void [Other, OtherCommands]
 
 const InvalidCommands = {
@@ -115,9 +115,9 @@ const InvalidCommands = {
 void InvalidCommands
 
 class Stack extends WebComponent<
-  { initial: number[] },
   StackState,
-  typeof StackCommands
+  typeof StackCommands,
+  { initial: number[] }
 > {
   static elementName = 'type-test-stack'
 

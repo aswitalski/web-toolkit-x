@@ -101,7 +101,7 @@ describe('Custom element', () => {
         throw new Error('Failed to render')
       }
     }
-    class App extends toolkit.WebComponent<object, { failing: boolean }> {
+    class App extends toolkit.WebComponent<{ failing: boolean }> {
       getInitialState() {
         return { failing: false }
       }
@@ -140,7 +140,7 @@ describe('Custom element', () => {
         throw new Error('Failed to render')
       }
     }
-    class App extends toolkit.WebComponent<object, { failing: boolean }> {
+    class App extends toolkit.WebComponent<{ failing: boolean }> {
       getInitialState() {
         return { failing: false }
       }
@@ -171,7 +171,7 @@ describe('Custom element', () => {
         return ['span', String(this.props.value)]
       }
     }
-    class App extends toolkit.WebComponent<object, { value: number }> {
+    class App extends toolkit.WebComponent<{ value: number }> {
       getInitialState() {
         return { value: 1 }
       }
@@ -203,7 +203,12 @@ describe('Custom element', () => {
       value: number
       updates: number
     }
-    class Nested extends toolkit.WebComponent<{ value: number }, State> {
+    class Nested extends toolkit.WebComponent<
+      State,
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- no commands
+      {},
+      { value: number }
+    > {
       static elementName = `custom-element-root-${counter++}`
 
       getInitialState({ value }: { value: number }) {
@@ -226,7 +231,7 @@ describe('Custom element', () => {
         return ['span', String(this.props.value)]
       }
     }
-    class App extends toolkit.WebComponent<object, { value: number }> {
+    class App extends toolkit.WebComponent<{ value: number }> {
       getInitialState() {
         return { value: 1 }
       }
@@ -262,7 +267,12 @@ describe('Custom element', () => {
       onPropsReceived: (nextState: State) => void,
       onUpdated: (prevState: State) => void,
     ) =>
-      class Nested extends toolkit.WebComponent<{ value: number }, State> {
+      class Nested extends toolkit.WebComponent<
+        State,
+        // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- no commands
+        {},
+        { value: number }
+      > {
         static elementName = `custom-element-root-${counter++}`
 
         getInitialState({ value }: { value: number }) {
@@ -287,10 +297,7 @@ describe('Custom element', () => {
       }
 
     const renderApp = async (Nested: ReturnType<typeof createNestedRoot>) => {
-      class App extends toolkit.WebComponent<
-        object,
-        { value: number; label: string }
-      > {
+      class App extends toolkit.WebComponent<{ value: number; label: string }> {
         getInitialState() {
           return { value: 1, label: 'a' }
         }
@@ -378,7 +385,7 @@ describe('Custom element', () => {
         return ['span', String(this.props.value)]
       }
     }
-    class App extends toolkit.WebComponent<object, { value: number }> {
+    class App extends toolkit.WebComponent<{ value: number }> {
       getInitialState() {
         return { value: 1 }
       }
@@ -424,7 +431,7 @@ describe('Custom element', () => {
         return ['span', String(this.props.value)]
       }
     }
-    class App extends toolkit.WebComponent<object, { value: number }> {
+    class App extends toolkit.WebComponent<{ value: number }> {
       getInitialState() {
         return { value: 1 }
       }
@@ -463,7 +470,7 @@ describe('Custom element', () => {
         return ['slot']
       }
     }
-    class App extends toolkit.WebComponent<object, { items: string[] }> {
+    class App extends toolkit.WebComponent<{ items: string[] }> {
       getInitialState() {
         return { items: ['a', 'b'] }
       }

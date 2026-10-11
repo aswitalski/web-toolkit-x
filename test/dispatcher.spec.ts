@@ -46,7 +46,7 @@ describe('Dispatcher', () => {
 
   describe('Batches commands', () => {
     let renders = 0
-    class Root extends toolkit.Root<object, { value: number; other?: number }> {
+    class Root extends toolkit.Root<{ value: number; other?: number }> {
       getInitialState() {
         return { value: 1 }
       }
@@ -135,7 +135,7 @@ describe('Dispatcher', () => {
 
     it('executes commands queued by queued commands', async () => {
       // given
-      class Root extends toolkit.Root<object, { step: number }> {
+      class Root extends toolkit.Root<{ step: number }> {
         getInitialState() {
           return { step: 0 }
         }
@@ -157,10 +157,7 @@ describe('Dispatcher', () => {
     it('stops executing commands queued in an endless cycle', async () => {
       // given
       const queued: Promise<boolean>[] = []
-      class Root extends toolkit.Root<
-        object,
-        { endless: boolean; count: number }
-      > {
+      class Root extends toolkit.Root<{ endless: boolean; count: number }> {
         getInitialState() {
           return { endless: false, count: 0 }
         }
@@ -195,7 +192,7 @@ describe('Dispatcher', () => {
     it('executes the commands issued in lifecycle methods of a failed update', async () => {
       // given
       let issued: Promise<boolean> | undefined
-      class Root extends toolkit.Root<object, { value: number }> {
+      class Root extends toolkit.Root<{ value: number }> {
         getInitialState() {
           return { value: 1 }
         }
@@ -220,10 +217,7 @@ describe('Dispatcher', () => {
     it('stops a cycle of failing updates issuing commands', async () => {
       // given
       const issued: Promise<boolean>[] = []
-      class Root extends toolkit.Root<
-        object,
-        { failing: boolean; count: number }
-      > {
+      class Root extends toolkit.Root<{ failing: boolean; count: number }> {
         getInitialState() {
           return { failing: false, count: 0 }
         }
@@ -260,7 +254,7 @@ describe('Dispatcher', () => {
 
     it('keeps the state when rendering it fails', async () => {
       // given
-      class Root extends toolkit.Root<object, { value: number }> {
+      class Root extends toolkit.Root<{ value: number }> {
         getInitialState() {
           return { value: 1 }
         }
@@ -290,7 +284,7 @@ describe('Dispatcher', () => {
 
     it('executes commands after a lifecycle method has thrown', async () => {
       // given
-      class Root extends toolkit.Root<object, { fail: boolean }> {
+      class Root extends toolkit.Root<{ fail: boolean }> {
         getInitialState() {
           return { fail: false }
         }

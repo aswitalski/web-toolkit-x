@@ -27,10 +27,7 @@ describe('Keyed children', () => {
     container.remove()
   })
 
-  class List extends toolkit.WebComponent<
-    object,
-    { keys: string[]; version: number }
-  > {
+  class List extends toolkit.WebComponent<{ keys: string[]; version: number }> {
     getInitialState() {
       return { keys: [], version: 0 }
     }

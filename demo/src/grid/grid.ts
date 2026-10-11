@@ -30,7 +30,7 @@ interface GridProps {
  * The wrapper managing the positions of the tiles, which keep their order
  * in the DOM and are placed by their index in the order of the tiles.
  */
-class Grid extends WebComponent<GridProps, GridState, typeof GridCommands> {
+class Grid extends WebComponent<GridState, typeof GridCommands, GridProps> {
   static elementName = 'tile-grid'
 
   static styles = ['styles/grid.css']

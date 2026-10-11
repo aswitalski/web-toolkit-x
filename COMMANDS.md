@@ -203,10 +203,10 @@ const StackCommands = {
 
 Misspelled state properties and values of wrong types are reported in the commands, as `this` is typed with the state.
 
-Web Components take the types of props, state and the Commands API, so the commands are called with the arguments of the API methods, and an API typed with a different state is reported:
+Web Components take the types of the state, the Commands API and props, so the commands are called with the arguments of the API methods, and an API typed with a different state is reported:
 
 ```ts
-class Stack extends WebComponent<object, StackState, typeof StackCommands> {
+class Stack extends WebComponent<StackState, typeof StackCommands> {
   static commands = StackCommands
 
   onAttached() {

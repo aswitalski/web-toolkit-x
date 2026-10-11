@@ -9,7 +9,7 @@ describe('Root update', () => {
     }
   }
 
-  class List extends toolkit.WebComponent<object, { keys: number[] }> {
+  class List extends toolkit.WebComponent<{ keys: number[] }> {
     getInitialState() {
       return { keys: range(1000) }
     }
@@ -42,7 +42,7 @@ describe('Root update', () => {
 
   /* A tree of 3280 nodes, with 2187 leaves. */
   const createTree = (showsCounter: (path: string) => boolean) =>
-    class Tree extends toolkit.WebComponent<object, { counter: number }> {
+    class Tree extends toolkit.WebComponent<{ counter: number }> {
       getInitialState() {
         return { counter: 0 }
       }

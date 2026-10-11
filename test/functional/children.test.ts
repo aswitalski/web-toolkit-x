@@ -16,7 +16,7 @@ describe('Children', () => {
 
   it('reorders keyed children next to a text node', async () => {
     // given
-    class List extends toolkit.WebComponent<object, { items: string[] }> {
+    class List extends toolkit.WebComponent<{ items: string[] }> {
       static elementName = `children-list-${counter++}`
 
       getInitialState() {

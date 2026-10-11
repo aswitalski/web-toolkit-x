@@ -24,16 +24,18 @@ const DISPATCHER = Symbol('dispatcher')
  * A root component with its own state, commands and plugins, rendered
  * in a custom element when elementName is defined.
  *
- * P: props received from the parent,
- * S: state, available as `this.props` when rendering,
- * C: commands API set as the static commands, changing the state.
+ * STATE: state, available as `this.props` when rendering, which can contain
+ * only primitives, functions, plain objects, arrays, maps, sets, dates
+ * and typed arrays,
+ * COMMANDS: commands API set as the static commands, changing the state,
+ * PROPS: props received from the parent.
  */
 class WebComponent<
-  P extends object = object,
-  S extends object = P,
+  STATE extends object = object,
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- no commands besides the core ones
-  C extends CommandsAPI<S> = {},
-> extends Component<S> {
+  COMMANDS extends CommandsAPI<STATE> = {},
+  PROPS extends object = object,
+> extends Component<STATE> {
   static NodeType = 'root'
 
   static styles: string[] = []
@@ -49,7 +51,7 @@ class WebComponent<
   declare markAsFailed: (error: Error) => void
   declare plugins: Plugins | null
   declare shadow: ShadowRoot | null
-  declare state?: S
+  declare state?: STATE
   declare pendingDescription?: ComponentDescription
   declare stopTracking?: () => void
   declare elementClass?: CustomElementConstructor;
@@ -101,10 +103,10 @@ class WebComponent<
    * Triggers the initial rendering of the component in given container.
    */
   async init() {
-    // props are passed from templates, which are not checked against P
+    // props are passed from templates, which are not checked against PROPS
     const state = await this.getInitialState.call(
       this.sandbox,
-      (this.description.props || {}) as P,
+      (this.description.props || {}) as PROPS,
     )
     this.setState(state)
 
@@ -117,7 +119,7 @@ class WebComponent<
     this.markAsReady()
   }
 
-  setState(state: S) {
+  setState(state: STATE) {
     if (state.constructor !== Object) {
       throw new Error('Web Component state must be a plain object!')
     }
@@ -138,8 +140,8 @@ class WebComponent<
       return
     }
     const state = this.getUpdatedState(
-      (description.props || {}) as P,
-      this.state || ({} as S),
+      (description.props || {}) as PROPS,
+      this.state || ({} as STATE),
     )
     this.setState(state)
   }
@@ -148,16 +150,16 @@ class WebComponent<
    * The default implementation delegating the calculation of initial state
    * to the state manager.
    */
-  getInitialState(props: P): S | Promise<S> {
+  getInitialState(props: PROPS): STATE | Promise<STATE> {
     // the default state is a copy of the props
-    return { ...props } as unknown as S
+    return { ...props } as unknown as STATE
   }
 
   /**
    * The default implementation delegating the calculation of updated state
    * to the state manager.
    */
-  getUpdatedState(props: P, state: S): S {
+  getUpdatedState(props: PROPS, state: STATE): STATE {
     return {
       ...state,
       ...props,
@@ -172,8 +174,8 @@ class WebComponent<
     this[DISPATCHER] = dispatcher
   }
 
-  get commands(): Commands<S> & BoundCommands<C> {
-    return this.dispatcher.commands as Commands<S> & BoundCommands<C>
+  get commands(): Commands<STATE> & BoundCommands<COMMANDS> {
+    return this.dispatcher.commands as Commands<STATE> & BoundCommands<COMMANDS>
   }
 
   createPlugins(): Plugins {

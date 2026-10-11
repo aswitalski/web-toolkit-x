@@ -7,7 +7,7 @@ export interface GridDemoState {
   tiles: TileProps[]
 }
 
-class GridDemo extends WebComponent<object, GridDemoState> {
+class GridDemo extends WebComponent<GridDemoState> {
   static elementName = 'grid-demo'
 
   getInitialState(): GridDemoState {

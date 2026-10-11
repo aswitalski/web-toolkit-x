@@ -102,9 +102,9 @@ const isHeadDown = ({ idle }: FlemmingElementState) =>
  * what it did before doing something else, with the callbacks it is given.
  */
 class Flemming extends WebComponent<
-  FlemmingProps,
   FlemmingElementState,
-  typeof FlemmingCommands
+  typeof FlemmingCommands,
+  FlemmingProps
 > {
   static elementName = 'f-lemming'
 

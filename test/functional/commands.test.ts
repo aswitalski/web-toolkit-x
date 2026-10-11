@@ -130,11 +130,7 @@ describe('Commands API', () => {
 
     let renders = 0
 
-    class Todos extends toolkit.WebComponent<
-      object,
-      State,
-      typeof TodoCommands
-    > {
+    class Todos extends toolkit.WebComponent<State, typeof TodoCommands> {
       static elementName = `commands-component-${counter++}`
 
       static commands = TodoCommands
@@ -263,10 +259,7 @@ describe('Commands API', () => {
         return ['span']
       }
     }
-    class CommandsComponent extends toolkit.WebComponent<
-      object,
-      { count: number }
-    > {
+    class CommandsComponent extends toolkit.WebComponent<{ count: number }> {
       static elementName = `commands-component-${counter++}`
 
       getInitialState() {
@@ -300,10 +293,7 @@ describe('Commands API', () => {
         return ['span']
       }
     }
-    class CommandsComponent extends toolkit.WebComponent<
-      object,
-      { count: number }
-    > {
+    class CommandsComponent extends toolkit.WebComponent<{ count: number }> {
       static elementName = `commands-component-${counter++}`
 
       getInitialState() {

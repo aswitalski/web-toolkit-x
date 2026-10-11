@@ -22,7 +22,7 @@ const createWorld = (): GameState['world'] => ({
 })
 
 /* The game, the flemmings moving in the window, updated on every frame. */
-class Game extends WebComponent<object, GameState, typeof GameCommands> {
+class Game extends WebComponent<GameState, typeof GameCommands> {
   static elementName = 'f-game'
 
   static styles = ['styles/game.css']
