@@ -150,7 +150,7 @@ npm run demo
 
 It builds Toolkit and runs the demos with the ES module build:
 
-- Flemmings, the default one, with flamingos walking, wading and idling, maintained by nested Web Components,
+- [Flemmings](demo/src/flemmings/docs/FLEMMINGS.md), the default one, with flamingos walking, wading and idling, maintained by nested Web Components,
 - Grid, at `/grid.html`, with tiles reordered by dragging them.
 
 ## Development
