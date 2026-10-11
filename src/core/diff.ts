@@ -41,6 +41,30 @@ const compareKeys = <T>(
   }
 }
 
+/* The keys given more than once, each of them once. */
+const getRepeatedKeys = (keys: string[]) => {
+  const given = new Set<string>()
+  const repeated = new Set<string>()
+  for (const key of keys) {
+    ;(given.has(key) ? repeated : given).add(key)
+  }
+  return [...repeated]
+}
+
+/*
+ * The keys with each repeat of a key followed by its number, after a separator
+ * the keys aren't expected to contain, so that the children with the same key
+ * are matched in order, each of them inserted and removed once.
+ */
+const getUniqueKeys = (keys: string[]) => {
+  const repeats = new Map<string, number>()
+  return keys.map(key => {
+    const repeat = repeats.get(key) ?? 0
+    repeats.set(key, repeat + 1)
+    return repeat ? `${key}\0${repeat}` : key
+  })
+}
+
 class Diff {
   declare root: WebComponent
   declare patches: Patch[]
@@ -411,25 +435,23 @@ class Diff {
       return node!
     }
 
-    const from = sourceNodes.map(
+    const sourceKeys = sourceNodes.map(
       (node, index) => node.key || Diff.createKey(index),
     )
-    const to = targetDescriptions.map(
+    const targetKeys = targetDescriptions.map(
       (description, index) => description.key || Diff.createKey(index),
     )
 
+    // only debug rejects the repeated keys, of the children to render, as
+    // the rendered ones may repeat them when rendered outside debug
     if (runtime().isDebug()) {
-      const assertUniqueKeys = (keys: string[]) => {
-        if (keys.length) {
-          const uniqueKeys = [...new Set(keys)]
-          if (uniqueKeys.length !== keys.length) {
-            throw new Error(`Non-unique keys detected in: ${keys.join(', ')}`)
-          }
-        }
+      const repeated = getRepeatedKeys(targetKeys)
+      if (repeated.length) {
+        throw new Error(`Non-unique keys detected: ${repeated.join(', ')}`)
       }
-      assertUniqueKeys(from)
-      assertUniqueKeys(to)
     }
+    const from = getUniqueKeys(sourceKeys)
+    const to = getUniqueKeys(targetKeys)
 
     // with the same keys in the same order, there are no nodes to move
     if (from.length === to.length && from.every((key, i) => key === to[i])) {
@@ -443,18 +465,12 @@ class Diff {
       return
     }
 
-    // the first of the items with the same key, which only debug rejects
-    const mapByKey = <T>(keys: string[], items: T[]) => {
-      const map = new Map<string, T>()
-      keys.forEach((key, index) => {
-        if (!map.has(key)) {
-          map.set(key, items[index]!)
-        }
-      })
-      return map
-    }
-    const sourceNodesMap = mapByKey(from, sourceNodes)
-    const targetDescriptionsMap = mapByKey(to, targetDescriptions)
+    const sourceNodesMap = new Map(
+      from.map((key, index) => [key, sourceNodes[index]!]),
+    )
+    const targetDescriptionsMap = new Map(
+      to.map((key, index) => [key, targetDescriptions[index]!]),
+    )
 
     const getNode = (key: string, isMove: boolean): VirtualNode => {
       const sourceNode = sourceNodesMap.get(key)

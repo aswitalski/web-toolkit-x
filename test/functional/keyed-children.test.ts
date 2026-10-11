@@ -89,4 +89,98 @@ describe('Keyed children', () => {
       keys = nextKeys
     }
   })
+
+  describe('with repeated keys', () => {
+    afterEach(() => {
+      toolkit.configure({ debug: true })
+    })
+
+    /* The elements of the children by their keys, in order of the repeats. */
+    const getElements = (ul: VirtualElement) => {
+      const elements = new Map<string, Element[]>()
+      for (const node of ul.children ?? []) {
+        elements.set(node.key!, [
+          ...(elements.get(node.key!) ?? []),
+          node.ref as Element,
+        ])
+      }
+      return elements
+    }
+
+    it('rejects them in debug, naming them', async () => {
+      // given
+      const list = await toolkit.render(List, container)
+
+      // when
+      const update = list.commands.update({
+        keys: ['a', 'b', 'a', 'c', 'b'],
+        version: 0,
+      })
+
+      // then
+      await expect(update).rejects.toThrow('Non-unique keys detected: a, b')
+    })
+
+    it('inserts and removes each child once outside debug', async () => {
+      // given
+      toolkit.configure({ debug: false })
+      const list = await toolkit.render(List, container)
+      const ul = list.content as VirtualElement
+      await list.commands.update({ keys: ['a'], version: 0 })
+
+      // when
+      await list.commands.update({ keys: ['a', 'a'], version: 0 })
+
+      // then
+      assert.deepEqual(
+        (ul.children ?? []).map(node => node.ref),
+        [...ul.ref.children],
+      )
+
+      // when
+      await list.commands.update({ keys: [], version: 0 })
+
+      // then
+      assert.equal(ul.ref.children.length, 0)
+      assert.equal(ul.children, undefined)
+    })
+
+    it('matches them in order after random updates outside debug', async () => {
+      // given
+      toolkit.configure({ debug: false })
+      const list = await toolkit.render(List, container)
+      const ul = list.content as VirtualElement
+      const random = createRandom(2)
+
+      for (let update = 0; update < 300; update++) {
+        const nextKeys = Array.from(
+          { length: Math.floor(random() * 8) },
+          () => 'abcd'[Math.floor(random() * 4)],
+        )
+        const elements = getElements(ul)
+
+        // when
+        await list.commands.update({ keys: nextKeys, version: update })
+
+        // then
+        const rendered = [...ul.ref.children]
+        assert.deepEqual(
+          rendered.map(element => element.textContent),
+          nextKeys.map(key => `${key}:${update}`),
+          `update ${update}`,
+        )
+        assert.deepEqual(
+          (ul.children ?? []).map(node => node.ref),
+          rendered,
+          `update ${update}`,
+        )
+        for (const [key, nextElements] of getElements(ul)) {
+          const kept = elements.get(key) ?? []
+          for (let i = 0; i < Math.min(kept.length, nextElements.length); i++) {
+            assert.equal(nextElements[i], kept[i], `update ${update}`)
+          }
+        }
+      }
+    })
+  })
 })

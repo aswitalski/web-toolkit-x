@@ -716,15 +716,44 @@ describe('Diff => calculate patches', () => {
 
         it('throws an error for non-unique keys', () => {
           // given
-          const template = ['section', ...getChildren('p', 'div', 'span', 'p')]
-          const nextTemplate = ['section', ...getChildren('div', 'span', 'p')]
+          const template = ['section', ...getChildren('div', 'span', 'p')]
+          const nextTemplate = [
+            'section',
+            ...getChildren('p', 'div', 'span', 'p'),
+          ]
 
           // when
           const [element, description] = renderNodeAndDescription(
             template,
             nextTemplate,
           )
-          assert.throws(() => calculatePatches(element, description), Error)
+          assert.throws(
+            () => calculatePatches(element, description),
+            'Non-unique keys detected: p',
+          )
+        })
+
+        it('matches rendered elements with non-unique keys in order', () => {
+          // given
+          const template = ['section', ...getChildren('p', 'div', 'span', 'p')]
+          const nextTemplate = ['section', ...getChildren('div', 'span', 'p')]
+          const [element, description] = renderNodeAndDescription(
+            template,
+            nextTemplate,
+          )
+          const [first, , , second] = element.children
+
+          // when
+          const patches = calculatePatches(element, description)
+
+          // then
+          assert.equal(patches.length, 3)
+          assertRemoveChildNode(patches[0], 'p', 3)
+          assert.equal(patches[0].child, second)
+          assertMoveChildNode(patches[1], 'p', 0, 2)
+          assert.equal(patches[1].child, first)
+
+          assertUpdatesNode(patches[2], element)
         })
 
         it('inserts element at the beginning', () => {
