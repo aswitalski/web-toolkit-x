@@ -3,14 +3,14 @@ import { type Template, WebComponent } from 'toolkit'
 import Grid from './grid.js'
 import service, { type TileProps } from './service.js'
 
-export interface DemoState {
+export interface GridDemoState {
   tiles: TileProps[]
 }
 
-class Demo extends WebComponent<object, DemoState> {
-  static elementName = 'tile-demo'
+class GridDemo extends WebComponent<object, GridDemoState> {
+  static elementName = 'grid-demo'
 
-  getInitialState(): DemoState {
+  getInitialState(): GridDemoState {
     return {
       tiles: service.createTiles(12),
     }
@@ -21,4 +21,4 @@ class Demo extends WebComponent<object, DemoState> {
   }
 }
 
-export default Demo
+export default GridDemo

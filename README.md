@@ -148,7 +148,10 @@ both with source maps, and a declaration map leading editors to the TypeScript s
 npm run demo
 ```
 
-It builds Toolkit and runs the demo with the ES module build.
+It builds Toolkit and runs the demos with the ES module build:
+
+- Flemmings, the default one, with flamingos walking, wading and idling, maintained by nested Web Components,
+- Grid, at `/grid.html`, with tiles reordered by dragging them.
 
 ## Development
 

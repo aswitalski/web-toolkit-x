@@ -1,0 +1,278 @@
+/* filling the window, with the world placed from its bottom */
+:host {
+  display: block;
+  height: 100%;
+}
+
+main {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/*
+ * the size of a frame, placed by the translation, set in sprite pixels from
+ * the bottom left
+ */
+li {
+  bottom: 0;
+  cursor: pointer;
+  height: calc(24 * var(--pixel));
+  left: 0;
+  position: absolute;
+  width: calc(16 * var(--pixel));
+}
+
+/*
+ * The layers of the scene drawn only by their backgrounds: the sky, the sun,
+ * the ground, the trees and the water, taking no clicks but on the ground.
+ */
+div.sky,
+div.sun,
+div.ground,
+div.trees,
+div.water {
+  pointer-events: none;
+  position: absolute;
+}
+
+/* a blue sky at the sunset, lighter towards the horizon */
+div.sky {
+  background: linear-gradient(
+    #101a36,
+    #1d2d5a 35%,
+    #34477f 65%,
+    #5a6ea6 85%,
+    #7a8abe
+  );
+  inset: 0;
+}
+
+/* the glow of the sun just behind the horizon on the right */
+div.sun {
+  background: radial-gradient(
+    ellipse 1080px 360px at right 400px bottom var(--land),
+    rgb(255 150 60 / 0.16),
+    rgb(255 150 60 / 0)
+  );
+  inset: 0;
+}
+
+/*
+ * The clouds at the top, placed from the bottom, in front of the flemmings
+ * falling out of them when clicked.
+ */
+div.clouds {
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+button.cloud {
+  background: none 0 0 / 100% 100% no-repeat;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+  pointer-events: auto;
+  position: absolute;
+}
+
+button.cloud.medium {
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 69 23' shape-rendering='crispEdges'><path fill='%234f5e94' d='M23 0h7v1h-7zM20 1h3v1h-3zM30 1h3v1h-3zM18 2h2v1h-2zM33 2h2v1h-2zM17 3h1v1h-1zM35 3h1v1h-1zM16 4h1v1h-1zM36 4h1v1h-1zM41 4h7v1h-7zM15 5h1v1h-1zM37 5h1v1h-1zM39 5h2v1h-2zM48 5h2v1h-2zM14 6h1v1h-1zM38 6h1v1h-1zM50 6h2v1h-2zM52 7h1v1h-1zM13 8h1v1h-1zM53 8h1v1h-1zM54 9h1v1h-1zM12 11h1v1h-1zM55 11h1v1h-1zM7 12h5v1h-5zM5 13h2v1h-2zM56 13h1v1h-1zM4 14h1v1h-1zM58 14h5v1h-5zM3 15h1v1h-1zM57 15h1v1h-1zM63 15h2v1h-2zM2 16h1v1h-1zM65 16h2v1h-2zM1 17h1v1h-1zM67 18h1v1h-1zM0 19h1v1h-1zM68 20h1v1h-1z'/><path fill='%233b4877' d='M23 1h7v1h-7zM20 2h13v1h-13zM18 3h17v1h-17zM17 4h19v1h-19zM16 5h21v1h-21zM41 5h7v1h-7zM15 6h23v1h-23zM39 6h11v1h-11zM14 7h38v1h-38zM14 8h39v1h-39zM13 9h41v1h-41zM13 10h42v1h-42zM13 11h42v1h-42zM12 12h44v1h-44zM7 13h49v1h-49zM5 14h52v1h-52zM4 15h53v1h-53zM58 15h5v1h-5zM3 16h62v1h-62zM2 17h65v1h-65zM1 18h66v1h-66zM1 19h67v1h-67zM0 20h68v1h-68z'/><path fill='%232e3964' d='M0 21h69v1h-69zM0 22h69v1h-69z'/></svg>");
+}
+
+button.cloud.large {
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 85 29' shape-rendering='crispEdges'><path fill='%234f5e94' d='M36 0h9v1h-9zM34 1h2v1h-2zM45 1h2v1h-2zM32 2h2v1h-2zM47 2h2v1h-2zM30 3h2v1h-2zM49 3h2v1h-2zM29 4h1v1h-1zM51 4h1v1h-1zM28 5h1v1h-1zM52 5h1v1h-1zM27 6h1v1h-1zM53 6h1v1h-1zM26 8h1v1h-1zM54 8h1v1h-1zM21 10h5v1h-5zM55 10h1v1h-1zM57 10h7v1h-7zM19 11h2v1h-2zM56 11h1v1h-1zM64 11h2v1h-2zM17 12h2v1h-2zM66 12h2v1h-2zM16 13h1v1h-1zM68 13h1v1h-1zM15 14h1v1h-1zM69 14h1v1h-1zM14 15h1v1h-1zM70 15h1v1h-1zM13 17h1v1h-1zM71 17h1v1h-1zM12 19h1v1h-1zM72 19h1v1h-1zM6 20h5v1h-5zM74 20h5v1h-5zM4 21h2v1h-2zM11 21h1v1h-1zM73 21h1v1h-1zM79 21h2v1h-2zM2 22h2v1h-2zM81 22h2v1h-2zM1 24h1v1h-1zM83 24h1v1h-1zM0 26h1v1h-1zM84 26h1v1h-1z'/><path fill='%233b4877' d='M36 1h9v1h-9zM34 2h13v1h-13zM32 3h17v1h-17zM30 4h21v1h-21zM29 5h23v1h-23zM28 6h25v1h-25zM27 7h27v1h-27zM27 8h27v1h-27zM26 9h29v1h-29zM26 10h29v1h-29zM21 11h35v1h-35zM57 11h7v1h-7zM19 12h47v1h-47zM17 13h51v1h-51zM16 14h53v1h-53zM15 15h55v1h-55zM14 16h57v1h-57zM14 17h57v1h-57zM13 18h59v1h-59zM13 19h59v1h-59zM12 20h61v1h-61zM6 21h5v1h-5zM12 21h61v1h-61zM74 21h5v1h-5zM4 22h77v1h-77zM2 23h81v1h-81zM2 24h81v1h-81zM1 25h83v1h-83zM1 26h83v1h-83z'/><path fill='%232e3964' d='M0 27h85v1h-85zM0 28h85v1h-85z'/></svg>");
+}
+
+button.cloud.small {
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 41 17' shape-rendering='crispEdges'><path fill='%234f5e94' d='M15 0h7v1h-7zM13 1h2v1h-2zM22 1h2v1h-2zM12 2h1v1h-1zM24 2h1v1h-1zM11 3h1v1h-1zM25 3h1v1h-1zM10 4h1v1h-1zM26 4h1v1h-1zM9 5h1v1h-1zM27 5h1v1h-1zM30 6h5v1h-5zM8 7h1v1h-1zM28 7h2v1h-2zM35 7h2v1h-2zM37 8h2v1h-2zM4 10h4v1h-4zM39 10h1v1h-1zM2 11h2v1h-2zM1 12h1v1h-1zM40 12h1v1h-1zM0 14h1v1h-1z'/><path fill='%233b4877' d='M15 1h7v1h-7zM13 2h11v1h-11zM12 3h13v1h-13zM11 4h15v1h-15zM10 5h17v1h-17zM9 6h19v1h-19zM9 7h19v1h-19zM30 7h5v1h-5zM8 8h29v1h-29zM8 9h31v1h-31zM8 10h31v1h-31zM4 11h36v1h-36zM2 12h38v1h-38zM1 13h40v1h-40zM1 14h40v1h-40z'/><path fill='%232e3964' d='M0 15h41v1h-41zM0 16h41v1h-41z'/></svg>");
+}
+
+button.cloud.round {
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 49 21' shape-rendering='crispEdges'><path fill='%234f5e94' d='M21 0h7v1h-7zM19 1h2v1h-2zM28 1h2v1h-2zM17 2h2v1h-2zM30 2h2v1h-2zM16 3h1v1h-1zM32 3h1v1h-1zM15 4h1v1h-1zM33 4h1v1h-1zM14 5h1v1h-1zM34 5h1v1h-1zM13 7h1v1h-1zM35 7h1v1h-1zM38 8h5v1h-5zM12 9h1v1h-1zM36 9h2v1h-2zM43 9h2v1h-2zM45 10h2v1h-2zM6 12h5v1h-5zM47 12h1v1h-1zM4 13h2v1h-2zM11 13h1v1h-1zM2 14h2v1h-2zM48 14h1v1h-1zM1 16h1v1h-1zM0 18h1v1h-1z'/><path fill='%233b4877' d='M21 1h7v1h-7zM19 2h11v1h-11zM17 3h15v1h-15zM16 4h17v1h-17zM15 5h19v1h-19zM14 6h21v1h-21zM14 7h21v1h-21zM13 8h23v1h-23zM13 9h23v1h-23zM38 9h5v1h-5zM12 10h33v1h-33zM12 11h35v1h-35zM12 12h35v1h-35zM6 13h5v1h-5zM12 13h36v1h-36zM4 14h44v1h-44zM2 15h47v1h-47zM2 16h47v1h-47zM1 17h47v1h-47zM1 18h47v1h-47z'/><path fill='%232e3964' d='M48 17h1v1h-1zM48 18h1v1h-1zM0 19h48v1h-48zM0 20h48v1h-48z'/></svg>");
+}
+
+/*
+ * The ground cut to its outline, with the edge along the top showing above
+ * the dirt, of 8 x 4 pixel tiles, cut to the same outline a pixel lower,
+ * double-clicked to stop the walking flemmings.
+ */
+div.ground {
+  background-color: #b06a3a;
+  bottom: 0;
+  clip-path: var(--outline);
+  left: 0;
+  pointer-events: auto;
+  right: 0;
+}
+
+div.ground::after {
+  background: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 4' shape-rendering='crispEdges'><rect width='8' height='4' fill='%237d4524'/><path fill='%236b3a1e' d='M1 0h1v1h-1zM5 2h2v1h-2z'/><path fill='%238f5530' d='M3 1h1v1h-1zM0 3h1v1h-1zM6 0h1v1h-1z'/><path fill='%235a2f18' d='M2 3h2v1h-2zM7 1h1v1h-1z'/></svg>")
+    0 0 / calc(8 * var(--pixel)) calc(4 * var(--pixel));
+  bottom: 0;
+  clip-path: var(--outline);
+  content: '';
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: var(--pixel);
+}
+
+/* the far and the near trees on the land, repeating after 1024 sprite pixels */
+div.trees {
+  background:
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 8' shape-rendering='crispEdges'><path fill='%232d5246' d='M0 8V2H12V3H30V4H38V5H65V6H71V7H84V6H90V5H96V4H114V3H125V4H135V5H149V4H155V3H190V2H225V3H230V4H234V5H238V6H257V5H314V4H334V5H343V6H346V5H355V4H362V3H371V2H380V1H395V2H401V3H409V4H414V3H430V4H437V5H477V4H485V3H491V4H498V5H503V6H524V5H542V4H550V3H577V2H583V1H596V2H602V3H608V4H626V5H637V4H647V3H661V4H667V5H702V6H737V5H742V4H746V3H750V2H769V3H826V4H846V3H855V2H858V3H867V4H874V5H883V6H892V7H907V6H913V5H921V4H926V5H942V4H949V3H989V4H997V5H1003V4H1010V3H1015V2H1024V8Z'/></svg>")
+      0 100% / calc(1024 * var(--pixel)) calc(8 * var(--pixel)) repeat-x,
+    url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 14' shape-rendering='crispEdges'><path fill='%233f6a5c' d='M0 14V3H7V4H14V5H20V6H39V5H48V4H56V5H65V6H78V7H80V6H120V5H125V4H130V3H147V4H152V5H156V6H160V7H165V8H174V9H186V10H194V11H216V10H238V11H258V10H263V9H267V8H272V7H280V6H300V5H317V6H323V7H328V8H334V9H348V8H354V7H359V6H384V5H397V4H434V3H441V2H457V3H461V4H465V5H469V6H473V7H478V8H485V9H497V10H507V11H519V10H526V9H532V8H551V9H560V10H568V9H577V8H590V7H592V8H632V9H637V10H642V11H659V10H664V9H668V8H672V7H677V6H686V5H698V4H706V3H728V4H750V3H770V4H775V5H779V6H784V7H792V8H812V9H829V8H835V7H840V6H846V5H860V6H866V7H871V8H896V9H909V10H946V11H953V12H969V11H973V10H977V9H981V8H985V7H990V6H997V5H1009V4H1019V3H1024V14Z'/></svg>")
+      0 100% / calc(1024 * var(--pixel)) calc(14 * var(--pixel)) repeat-x;
+  bottom: var(--land);
+  height: calc(14 * var(--pixel));
+  left: 0;
+  right: 0;
+}
+
+/* cut to its outline, showing the legs and the heads of the flemmings in it */
+div.water {
+  background:
+    linear-gradient(rgb(190 225 255 / 0.7), rgb(190 225 255 / 0.7)) top / 100%
+      var(--pixel) no-repeat,
+    rgb(70 140 220 / 0.8);
+  clip-path: var(--outline);
+}
+
+/*
+ * The splashes on the water surface in the pond, behind the flemmings:
+ * droplets jumping up and falling back, and a pair of light dashes spreading
+ * a pixel at a time from where they start, and fading.
+ */
+div.ripples {
+  --droplet: rgb(225 240 255 / 0.9);
+  height: calc(5 * var(--pixel));
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+}
+
+div.ripples span {
+  animation: splashing 600ms step-end forwards;
+  bottom: 0;
+  height: var(--pixel);
+  position: absolute;
+  width: var(--pixel);
+}
+
+div.ripples span::before,
+div.ripples span::after {
+  animation: 1000ms steps(14) forwards;
+  background: var(--droplet);
+  bottom: 0;
+  content: '';
+  height: var(--pixel);
+  position: absolute;
+  width: calc(3 * var(--pixel));
+}
+
+div.ripples span::before {
+  animation-name: ripple-left;
+  right: var(--pixel);
+}
+
+div.ripples span::after {
+  animation-name: ripple-right;
+  left: var(--pixel);
+}
+
+/* only the legs crossing the surface, without droplets, spreading less */
+div.ripples span.small {
+  animation: none;
+}
+
+div.ripples span.small::before,
+div.ripples span.small::after {
+  animation-duration: 500ms;
+  animation-timing-function: steps(6);
+  width: calc(2 * var(--pixel));
+}
+
+div.ripples span.small::before {
+  animation-name: small-ripple-left;
+}
+
+div.ripples span.small::after {
+  animation-name: small-ripple-right;
+}
+
+@keyframes small-ripple-left {
+  to {
+    opacity: 0;
+    translate: calc(-6 * var(--pixel));
+  }
+}
+
+@keyframes small-ripple-right {
+  to {
+    opacity: 0;
+    translate: calc(6 * var(--pixel));
+  }
+}
+
+@keyframes ripple-left {
+  to {
+    opacity: 0;
+    translate: calc(-14 * var(--pixel));
+  }
+}
+
+@keyframes ripple-right {
+  to {
+    opacity: 0;
+    translate: calc(14 * var(--pixel));
+  }
+}
+
+/*
+ * The droplets, as shadows of the pixel: two flying the whole pixels of
+ * --a and --b sideways at each step, and one in the middle straight up.
+ */
+@keyframes splashing {
+  0% {
+    box-shadow:
+      calc(var(--a) * 1 * var(--pixel)) calc(-1 * var(--pixel)) var(--droplet),
+      calc(var(--b) * 1 * var(--pixel)) calc(-1 * var(--pixel)) var(--droplet),
+      0 calc(-2 * var(--pixel)) var(--droplet);
+  }
+  20% {
+    box-shadow:
+      calc(var(--a) * 2 * var(--pixel)) calc(-3 * var(--pixel)) var(--droplet),
+      calc(var(--b) * 2 * var(--pixel)) calc(-3 * var(--pixel)) var(--droplet),
+      0 calc(-4 * var(--pixel)) var(--droplet);
+  }
+  40% {
+    box-shadow:
+      calc(var(--a) * 3 * var(--pixel)) calc(-4 * var(--pixel)) var(--droplet),
+      calc(var(--b) * 3 * var(--pixel)) calc(-4 * var(--pixel)) var(--droplet),
+      0 calc(-3 * var(--pixel)) var(--droplet);
+  }
+  60% {
+    box-shadow:
+      calc(var(--a) * 4 * var(--pixel)) calc(-3 * var(--pixel)) var(--droplet),
+      calc(var(--b) * 4 * var(--pixel)) calc(-3 * var(--pixel)) var(--droplet),
+      0 calc(-1 * var(--pixel)) var(--droplet);
+  }
+  80% {
+    box-shadow:
+      calc(var(--a) * 5 * var(--pixel)) calc(-1 * var(--pixel)) var(--droplet),
+      calc(var(--b) * 5 * var(--pixel)) calc(-1 * var(--pixel)) var(--droplet);
+  }
+  100% {
+    box-shadow: none;
+  }
+}

@@ -1,0 +1,655 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+/*
+ * The sprite strip of 33 frames, scaled to the height and shifted to a frame
+ * by n frame widths for the frame n:
+ * - walking 0-3, falling 9-10, turning around and flagging the head 4-8,
+ * - standing 4, turning the head to the front and back 5-8,
+ * - lowering the head 11-12 and feeding in the water 13-14,
+ * - lifting a leg 15, on one leg 16, turning the head 17-20,
+ * - tucking the head 21 and sleeping 22-23, breathing,
+ * - preening 24-25, saluting with the wings 26-27 and treading 28-29,
+ * - blocking, the body facing the viewer with the wings spread on both sides
+ *   and the head the way it was going 30-31, diving with the wings folded and
+ *   the legs nearly straight 32.
+ * Settling plays some of them again quickly, finishing what it did.
+ * The frames with step-end keyframes last until the next ones, unevenly.
+ * Each one has a bit lighter or darker plumage, of its own.
+ */
+img {
+  --frame: calc(16 * var(--pixel));
+  display: block;
+  filter: brightness(var(--plumage, 1));
+  height: 100%;
+  object-fit: cover;
+  object-position: 0 0;
+  user-select: none;
+  width: 100%;
+}
+
+img.left {
+  scale: -1 1;
+}
+
+img.walking {
+  animation: walking 320ms steps(4, jump-none) infinite;
+}
+
+/* falling slowly flapping the wings, or diving with them folded */
+img.falling {
+  animation: falling 240ms steps(2, jump-none) infinite;
+}
+
+img.diving {
+  object-position: calc(-32 * var(--frame)) 0;
+}
+
+/* turning the body to the viewer and spreading the wings, holding them open */
+img.blocking {
+  animation: blocking 300ms step-end forwards;
+}
+
+/* folding the wings and turning the body back, before walking on */
+img.unblocking {
+  animation: unblocking 300ms step-end forwards;
+}
+
+/*
+ * flagging, turning the head to the other side with the others close, as when
+ * looking back, starting anew after settling, and back with the looking back
+ * ending, when standing again
+ */
+img.flagging {
+  animation: looking-back 550ms step-end forwards;
+}
+
+/* turning the head to the other side quickly, before turning the body */
+img.turning {
+  animation: looking-back 200ms step-end forwards;
+}
+
+img.standing,
+img.wading,
+img.settling {
+  object-position: calc(-4 * var(--frame)) 0;
+}
+
+/*
+ * settling, finishing quickly what it did before doing something else,
+ * 50ms a frame, from the frame it showed, as timed and delayed by the element
+ */
+img.settling.from-looking-back {
+  animation: settling-looking-back 250ms step-end forwards;
+}
+
+img.settling.from-looking-back-on-one-leg {
+  animation: settling-looking-back-on-one-leg 350ms step-end forwards;
+}
+
+img.settling.from-one-leg {
+  animation: settling-one-leg 150ms step-end forwards;
+}
+
+img.settling.from-sleeping {
+  animation: settling-sleeping 350ms step-end forwards;
+}
+
+img.settling.from-preening {
+  animation: settling-preening 250ms step-end forwards;
+}
+
+img.settling.from-saluting {
+  animation: settling-saluting 150ms step-end forwards;
+}
+
+img.settling.from-feeding {
+  animation: settling-feeding 200ms step-end forwards;
+}
+
+img.settling.from-flagging {
+  animation: settling-looking-back 250ms step-end forwards;
+}
+
+/* turning the head to the other side, and ahead again */
+img.standing.looking-back {
+  animation: looking-back 550ms step-end forwards;
+}
+
+img.standing.looking-back-end,
+img.wading.looking-back-end {
+  animation: looking-back-end 450ms step-end forwards;
+}
+
+/* nibbling the wing with the head turned back, in uneven bursts */
+img.standing.preening {
+  animation:
+    preening 700ms step-end forwards,
+    nibbling 2900ms step-end 700ms infinite;
+}
+
+img.standing.preening-end {
+  animation: preening-end 550ms step-end forwards;
+}
+
+/* opening the wings quickly, holding them and closing slower */
+img.standing.saluting {
+  animation: saluting 1600ms step-end forwards;
+}
+
+/* on one leg, lifting it and putting it down */
+img.standing.one-leg {
+  animation: lifting-leg 600ms step-end forwards;
+}
+
+img.standing.lowering-leg {
+  animation: lowering-leg 450ms step-end forwards;
+}
+
+img.standing.one-leg.looking-back {
+  animation: looking-back-on-one-leg 550ms step-end forwards;
+}
+
+img.standing.one-leg.looking-back-end {
+  animation: looking-back-on-one-leg-end 450ms step-end forwards;
+}
+
+/* tucking the head on the back and breathing slowly when asleep */
+img.standing.one-leg.sleeping {
+  animation:
+    sleeping 1200ms step-end forwards,
+    breathing 4200ms step-end 1200ms infinite;
+}
+
+img.standing.one-leg.sleeping-end {
+  animation: sleeping-end 700ms step-end forwards;
+}
+
+/*
+ * Lowering the head into the water, 0.3s after starting, or 1.5s after
+ * treading to stir up the mud first, as timed by the element, and sifting
+ * there, then raising it.
+ */
+img.wading.feeding {
+  animation:
+    feeding 400ms step-end forwards,
+    sifting 700ms steps(2, jump-none) 400ms infinite;
+}
+
+img.wading.feeding.stirring {
+  animation:
+    treading 400ms steps(2, jump-none) 3,
+    feeding 400ms step-end 1200ms forwards,
+    sifting 700ms steps(2, jump-none) 1600ms infinite;
+}
+
+img.wading.feeding-end {
+  animation: feeding-end 400ms step-end forwards;
+}
+
+@keyframes walking {
+  from {
+    object-position: 0 0;
+  }
+  to {
+    object-position: calc(-3 * var(--frame)) 0;
+  }
+}
+
+@keyframes falling {
+  from {
+    object-position: calc(-9 * var(--frame)) 0;
+  }
+  to {
+    object-position: calc(-10 * var(--frame)) 0;
+  }
+}
+
+@keyframes looking-back {
+  0% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+  18% {
+    object-position: calc(-5 * var(--frame)) 0;
+  }
+  36% {
+    object-position: calc(-6 * var(--frame)) 0;
+  }
+  56% {
+    object-position: calc(-7 * var(--frame)) 0;
+  }
+  76%,
+  100% {
+    object-position: calc(-8 * var(--frame)) 0;
+  }
+}
+
+@keyframes looking-back-end {
+  0% {
+    object-position: calc(-8 * var(--frame)) 0;
+  }
+  20% {
+    object-position: calc(-7 * var(--frame)) 0;
+  }
+  40% {
+    object-position: calc(-6 * var(--frame)) 0;
+  }
+  60% {
+    object-position: calc(-5 * var(--frame)) 0;
+  }
+  80%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes preening {
+  0% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+  15% {
+    object-position: calc(-5 * var(--frame)) 0;
+  }
+  30% {
+    object-position: calc(-7 * var(--frame)) 0;
+  }
+  45% {
+    object-position: calc(-8 * var(--frame)) 0;
+  }
+  60%,
+  100% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+}
+
+@keyframes nibbling {
+  0% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+  10% {
+    object-position: calc(-25 * var(--frame)) 0;
+  }
+  18% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+  26% {
+    object-position: calc(-25 * var(--frame)) 0;
+  }
+  33% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+  60% {
+    object-position: calc(-25 * var(--frame)) 0;
+  }
+  66% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+  100% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+}
+
+@keyframes preening-end {
+  0% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+  20% {
+    object-position: calc(-8 * var(--frame)) 0;
+  }
+  40% {
+    object-position: calc(-7 * var(--frame)) 0;
+  }
+  60% {
+    object-position: calc(-5 * var(--frame)) 0;
+  }
+  80%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes saluting {
+  0% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+  8% {
+    object-position: calc(-26 * var(--frame)) 0;
+  }
+  16% {
+    object-position: calc(-27 * var(--frame)) 0;
+  }
+  72% {
+    object-position: calc(-26 * var(--frame)) 0;
+  }
+  84%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes lifting-leg {
+  0% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+  30% {
+    object-position: calc(-15 * var(--frame)) 0;
+  }
+  60%,
+  100% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+}
+
+@keyframes lowering-leg {
+  0% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+  33% {
+    object-position: calc(-15 * var(--frame)) 0;
+  }
+  66%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes looking-back-on-one-leg {
+  0% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+  18% {
+    object-position: calc(-17 * var(--frame)) 0;
+  }
+  36% {
+    object-position: calc(-18 * var(--frame)) 0;
+  }
+  56% {
+    object-position: calc(-19 * var(--frame)) 0;
+  }
+  76%,
+  100% {
+    object-position: calc(-20 * var(--frame)) 0;
+  }
+}
+
+@keyframes looking-back-on-one-leg-end {
+  0% {
+    object-position: calc(-20 * var(--frame)) 0;
+  }
+  20% {
+    object-position: calc(-19 * var(--frame)) 0;
+  }
+  40% {
+    object-position: calc(-18 * var(--frame)) 0;
+  }
+  60% {
+    object-position: calc(-17 * var(--frame)) 0;
+  }
+  80%,
+  100% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+}
+
+@keyframes sleeping {
+  0% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+  15% {
+    object-position: calc(-19 * var(--frame)) 0;
+  }
+  30% {
+    object-position: calc(-20 * var(--frame)) 0;
+  }
+  55% {
+    object-position: calc(-21 * var(--frame)) 0;
+  }
+  80%,
+  100% {
+    object-position: calc(-22 * var(--frame)) 0;
+  }
+}
+
+@keyframes breathing {
+  0% {
+    object-position: calc(-22 * var(--frame)) 0;
+  }
+  45% {
+    object-position: calc(-23 * var(--frame)) 0;
+  }
+  70%,
+  100% {
+    object-position: calc(-22 * var(--frame)) 0;
+  }
+}
+
+@keyframes sleeping-end {
+  0% {
+    object-position: calc(-22 * var(--frame)) 0;
+  }
+  20% {
+    object-position: calc(-21 * var(--frame)) 0;
+  }
+  40% {
+    object-position: calc(-20 * var(--frame)) 0;
+  }
+  60% {
+    object-position: calc(-19 * var(--frame)) 0;
+  }
+  80%,
+  100% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+}
+
+@keyframes feeding {
+  0% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+  25% {
+    object-position: calc(-11 * var(--frame)) 0;
+  }
+  50% {
+    object-position: calc(-12 * var(--frame)) 0;
+  }
+  75%,
+  100% {
+    object-position: calc(-13 * var(--frame)) 0;
+  }
+}
+
+@keyframes blocking {
+  0% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+  33% {
+    object-position: calc(-30 * var(--frame)) 0;
+  }
+  66%,
+  100% {
+    object-position: calc(-31 * var(--frame)) 0;
+  }
+}
+
+@keyframes unblocking {
+  0% {
+    object-position: calc(-31 * var(--frame)) 0;
+  }
+  33% {
+    object-position: calc(-30 * var(--frame)) 0;
+  }
+  66%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes treading {
+  from {
+    object-position: calc(-28 * var(--frame)) 0;
+  }
+  to {
+    object-position: calc(-29 * var(--frame)) 0;
+  }
+}
+
+@keyframes sifting {
+  from {
+    object-position: calc(-13 * var(--frame)) 0;
+  }
+  to {
+    object-position: calc(-14 * var(--frame)) 0;
+  }
+}
+
+@keyframes feeding-end {
+  0% {
+    object-position: calc(-13 * var(--frame)) 0;
+  }
+  25% {
+    object-position: calc(-12 * var(--frame)) 0;
+  }
+  50% {
+    object-position: calc(-11 * var(--frame)) 0;
+  }
+  75%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+/*
+ * Settling plays some of the endings quickly, under names of its own, so that
+ * its animation starts anew also when settling from them.
+ */
+@keyframes settling-looking-back {
+  0% {
+    object-position: calc(-8 * var(--frame)) 0;
+  }
+  20% {
+    object-position: calc(-7 * var(--frame)) 0;
+  }
+  40% {
+    object-position: calc(-6 * var(--frame)) 0;
+  }
+  60% {
+    object-position: calc(-5 * var(--frame)) 0;
+  }
+  80%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes settling-looking-back-on-one-leg {
+  0% {
+    object-position: calc(-20 * var(--frame)) 0;
+  }
+  14.29% {
+    object-position: calc(-19 * var(--frame)) 0;
+  }
+  28.57% {
+    object-position: calc(-18 * var(--frame)) 0;
+  }
+  42.86% {
+    object-position: calc(-17 * var(--frame)) 0;
+  }
+  57.14% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+  71.43% {
+    object-position: calc(-15 * var(--frame)) 0;
+  }
+  85.71%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes settling-one-leg {
+  0% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+  33.33% {
+    object-position: calc(-15 * var(--frame)) 0;
+  }
+  66.67%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes settling-sleeping {
+  0% {
+    object-position: calc(-22 * var(--frame)) 0;
+  }
+  14.29% {
+    object-position: calc(-21 * var(--frame)) 0;
+  }
+  28.57% {
+    object-position: calc(-20 * var(--frame)) 0;
+  }
+  42.86% {
+    object-position: calc(-19 * var(--frame)) 0;
+  }
+  57.14% {
+    object-position: calc(-16 * var(--frame)) 0;
+  }
+  71.43% {
+    object-position: calc(-15 * var(--frame)) 0;
+  }
+  85.71%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes settling-preening {
+  0% {
+    object-position: calc(-24 * var(--frame)) 0;
+  }
+  20% {
+    object-position: calc(-8 * var(--frame)) 0;
+  }
+  40% {
+    object-position: calc(-7 * var(--frame)) 0;
+  }
+  60% {
+    object-position: calc(-5 * var(--frame)) 0;
+  }
+  80%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes settling-saluting {
+  0% {
+    object-position: calc(-27 * var(--frame)) 0;
+  }
+  33.33% {
+    object-position: calc(-26 * var(--frame)) 0;
+  }
+  66.67%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
+
+@keyframes settling-feeding {
+  0% {
+    object-position: calc(-13 * var(--frame)) 0;
+  }
+  25% {
+    object-position: calc(-12 * var(--frame)) 0;
+  }
+  50% {
+    object-position: calc(-11 * var(--frame)) 0;
+  }
+  75%,
+  100% {
+    object-position: calc(-4 * var(--frame)) 0;
+  }
+}
