@@ -5,7 +5,7 @@ import type {
   NodeDescription,
 } from './description.js'
 import CreatedRoots from './created-roots.js'
-import Lifecycle, { throwErrors } from './lifecycle.js'
+import Lifecycle, { type CollectedError, throwErrors } from './lifecycle.js'
 import type {
   Component,
   ParentVirtualNode,
@@ -77,7 +77,7 @@ class Diff {
       // the update is completed when hooks or patches throw, as stopping
       // would leave the DOM, the virtual nodes and the hooks called out of
       // sync, and the errors are thrown once it is applied
-      const errors: unknown[] = []
+      const errors: CollectedError[] = []
       Lifecycle.collectingErrors(errors, () =>
         Lifecycle.beforeUpdate(this.patches),
       )
@@ -86,13 +86,14 @@ class Diff {
         try {
           Patch.apply(patch)
         } catch (error) {
-          errors.push(error)
+          errors.push({ error, source: Patch.describe(patch) })
           continue
         }
         applied.push(patch)
       }
       Lifecycle.collectingErrors(errors, () => Lifecycle.afterUpdate(applied))
-      throwErrors(errors, 'Errors applying the update')
+      const name = (this.root.constructor as typeof WebComponent).displayName
+      throwErrors(errors, `Errors applying the update of ${name}`)
     }
     return this.patches
   }

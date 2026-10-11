@@ -459,6 +459,14 @@ describe('Custom element', () => {
       error.errors.map((cause: Error) => cause.message),
       ['Negative value: -1', 'Negative value: -2'],
     )
+    assert.equal(
+      error.message,
+      [
+        'Errors applying the update of App:',
+        '- the update-root patch of Nested: Error: Negative value: -1',
+        '- the update-root patch of Nested: Error: Negative value: -2',
+      ].join('\n'),
+    )
   })
 
   it('renders and updates the child nodes in the light DOM', async () => {

@@ -122,11 +122,19 @@ Changing an object passed to a command changes the current state, which needs to
 
 Commands are usually issued on either user actions or underlying data changes. They are queued and the ones issued together, in the same synchronous run of code, are executed in a single update once it has completed. The commands issued after an `await` or in a separate event listener are executed in a separate update.
 
-Every command returns a promise, resolved with `true` once both virtual and the actual DOM are updated, or with `false` when the command is ignored, as after the component is destroyed. When the update fails, the promise is rejected with the error. An update is still completed when lifecycle methods throw, and when more of them throw, the promise is rejected with an `AggregateError` of all their errors.
+Every command returns a promise, resolved with `true` once both virtual and the actual DOM are updated, or with `false` when the command is ignored, as after the component is destroyed.
 
 ```js
 await this.commands.update({ selected: id })
 // the DOM shows the selected item
+```
+
+When the update fails, the promise is rejected with the error. An update is still completed when lifecycle methods or changes of the DOM throw, and when more of them throw, the promise is rejected with an `AggregateError` of all their errors, its message listing where each one was thrown:
+
+```
+Errors applying the update of Form:
+- the set-property patch of <input>: InvalidStateError: …
+- Field.onUpdated(): Error: Failed to update b
 ```
 
 They may also be called from the component's lifecycle methods, in the middle of the state transition. In such case they are executed in the next update, once the current one has completed, also when it fails. Toolkit also detects if such cycles do not cause infinite update loops.

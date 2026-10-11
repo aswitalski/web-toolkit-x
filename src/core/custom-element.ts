@@ -1,5 +1,5 @@
 import DOM from './dom.js'
-import Lifecycle, { throwErrors } from './lifecycle.js'
+import Lifecycle, { type CollectedError, throwErrors } from './lifecycle.js'
 import type { WebComponent } from './nodes.js'
 import Plugins, { type Plugin, type PluginManifest } from './plugins.js'
 import { isSameList } from './utils.js'
@@ -106,14 +106,15 @@ export class ComponentElement extends HTMLElement {
       return
     }
     // the hooks of all the components are called when some of them throw
-    const errors: unknown[] = []
+    const errors: CollectedError[] = []
     Lifecycle.collectingErrors(errors, () => {
       Lifecycle.onComponentDestroyed(root)
       Lifecycle.onComponentDetached(root)
     })
     root.ref = null
     this.$root = null
-    throwErrors(errors, 'Errors destroying the component')
+    const name = (root.constructor as typeof WebComponent).displayName
+    throwErrors(errors, `Errors destroying ${name}`)
   }
 }
 

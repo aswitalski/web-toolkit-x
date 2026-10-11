@@ -151,6 +151,53 @@ describe('Update errors', () => {
     ])
   })
 
+  it('lists in the message where each error was thrown', async () => {
+    // given
+    class Field extends toolkit.Component<{ text: string }> {
+      onUpdated() {
+        throw new Error(`Failed to update ${this.props.text}`)
+      }
+
+      render(): Template {
+        return ['p', this.props.text]
+      }
+    }
+    class Form extends toolkit.WebComponent<{ value: string; text: string }> {
+      static elementName = `update-errors-form-${counter++}`
+
+      getInitialState() {
+        return { value: '', text: 'a' }
+      }
+
+      render(): Template {
+        return [
+          'form',
+          // a file input throws when its value is set to other than empty
+          ['input', { type: 'file', properties: { value: this.props.value } }],
+          [Field, { text: this.props.text }],
+        ]
+      }
+    }
+    const form = await toolkit.render(Form, container)
+
+    // when
+    let error: unknown
+    try {
+      await form.commands.update({ value: 'file.txt', text: 'b' })
+    } catch (thrown) {
+      error = thrown
+    }
+
+    // then
+    assert(error instanceof AggregateError)
+    const [message, ...causes] = error.message.split('\n')
+    assert.equal(message, 'Errors applying the update of Form:')
+    assert.equal(causes.length, 2)
+    assert.equal(causes[1], '- Field.onUpdated(): Error: Failed to update b')
+    // the message of the patch error depends on the browser
+    assert.match(causes[0], /^- the set-property patch of <input>: \w+Error: /)
+  })
+
   it('applies the other patches after a patch throws', async () => {
     // given
     class Form extends toolkit.WebComponent<{ value: string; text: string }> {
@@ -194,10 +241,23 @@ describe('Update errors', () => {
     const element = list.ref as ComponentElement
 
     // when
-    const destroy = () => element.destroy()
+    let error: unknown
+    try {
+      element.destroy()
+    } catch (thrown) {
+      error = thrown
+    }
 
     // then
-    expect(destroy).toThrow(AggregateError)
+    assert(error instanceof AggregateError)
+    assert.equal(
+      error.message,
+      [
+        'Errors destroying List:',
+        '- Item.onDetached(): Error: Failed to detach a',
+        '- Item.onDetached(): Error: Failed to detach b',
+      ].join('\n'),
+    )
     assert.deepEqual(detached.sort(), ['a', 'b'])
     assert.equal(element.$root, null)
   })

@@ -5,27 +5,51 @@ import type {
 } from './description.js'
 import type {
   Component,
+  ComponentClass,
   ParentVirtualNode,
   VirtualNode,
   WebComponent,
 } from './nodes.js'
 import Patch from './patch.js'
+import type { AnyFunction } from './utils.js'
+
+type Hook =
+  | 'onCreated'
+  | 'onAttached'
+  | 'onPropsReceived'
+  | 'onUpdated'
+  | 'onDestroyed'
+  | 'onDetached'
+
+/* An error collected in an update, with where it was thrown. */
+export interface CollectedError {
+  error: unknown
+  source: string
+}
 
 /* The errors of the hooks called while collecting them, if collecting. */
-let hookErrors: unknown[] | null = null
+let hookErrors: CollectedError[] | null = null
 
 /*
- * Calls a hook, collecting its error if collecting, so that a throwing hook
- * does not stop the other hooks from being called.
+ * Calls the hook of a component, if it defines it, collecting its error
+ * if collecting, so that a throwing hook does not stop the other hooks
+ * from being called.
  */
-const callHook = (hook: () => void) => {
+const callHook = (component: Component, hook: Hook, ...args: unknown[]) => {
+  if (!component.hasOwnMethod(hook)) {
+    return
+  }
+  const call = () =>
+    (component[hook] as AnyFunction).call(component.sandbox, ...args)
   if (!hookErrors) {
-    return hook()
+    call()
+    return
   }
   try {
-    hook()
+    call()
   } catch (error) {
-    hookErrors.push(error)
+    const name = (component.constructor as ComponentClass).displayName
+    hookErrors.push({ error, source: `${name}.${hook}()` })
   }
 }
 
@@ -33,24 +57,43 @@ const callHook = (hook: () => void) => {
  * Calls the hook of a component being removed, ignoring the commands it
  * issues. The dispatcher is shared with the root, so its mode is restored.
  */
-const callIgnoringCommands = (component: Component, hook: () => void) => {
+const callIgnoringCommands = (component: Component, hook: Hook) => {
+  if (!component.hasOwnMethod(hook)) {
+    return
+  }
   const { dispatcher } = component
   const { mode } = dispatcher
   dispatcher.ignoreIncoming()
   try {
-    callHook(hook)
+    callHook(component, hook)
   } finally {
     dispatcher.mode = mode
   }
 }
 
-/* Throws the errors, aggregated when there are more of them. */
-export const throwErrors = (errors: unknown[], message: string) => {
+/* The name and the message of an error, indented when on many lines. */
+const describeError = (error: unknown) =>
+  (error instanceof Error ? `${error.name}: ${error.message}` : String(error))
+    .split('\n')
+    .join('\n  ')
+
+/*
+ * Throws the errors, aggregated when there are more of them, listing
+ * in the message where each one was thrown, as the console shows only
+ * the message and the stack of the aggregated error.
+ */
+export const throwErrors = (errors: CollectedError[], message: string) => {
   if (errors.length === 1) {
-    throw errors[0]
+    throw errors[0]!.error
   }
   if (errors.length > 1) {
-    throw new AggregateError(errors, message)
+    const causes = errors.map(
+      ({ error, source }) => `- ${source}: ${describeError(error)}`,
+    )
+    throw new AggregateError(
+      errors.map(({ error }) => error),
+      [`${message}:`, ...causes].join('\n'),
+    )
   }
 }
 
@@ -59,7 +102,7 @@ const Lifecycle = {
    * Calls the hooks in the callback, collecting the errors they throw in
    * the given list instead of stopping at the first one.
    */
-  collectingErrors(errors: unknown[], callback: () => void) {
+  collectingErrors(errors: CollectedError[], callback: () => void) {
     const prevErrors = hookErrors
     hookErrors = errors
     try {
@@ -70,9 +113,7 @@ const Lifecycle = {
   },
 
   onComponentCreated(component: Component) {
-    if (component.hasOwnMethod('onCreated')) {
-      callHook(() => component.onCreated!.call(component.sandbox))
-    }
+    callHook(component, 'onCreated')
     if (component.content) {
       this.onNodeCreated(component.content)
     }
@@ -95,9 +136,7 @@ const Lifecycle = {
   },
 
   onRootCreated(root: WebComponent) {
-    if (root.hasOwnMethod('onCreated')) {
-      callHook(() => root.onCreated!.call(root.sandbox))
-    }
+    callHook(root, 'onCreated')
     const { childNodes } = root
     if (childNodes) {
       for (const child of childNodes) {
@@ -110,9 +149,7 @@ const Lifecycle = {
     if (component.content) {
       this.onNodeAttached(component.content)
     }
-    if (component.hasOwnMethod('onAttached')) {
-      callHook(() => component.onAttached!.call(component.sandbox))
-    }
+    callHook(component, 'onAttached')
   },
 
   onElementAttached(element: ParentVirtualNode) {
@@ -156,32 +193,20 @@ const Lifecycle = {
         this.onNodeAttached(child)
       }
     }
-    if (root.hasOwnMethod('onAttached')) {
-      callHook(() => root.onAttached!.call(root.sandbox))
-    }
+    callHook(root, 'onAttached')
   },
 
   onComponentReceivedProps(component: Component, nextProps: Props = {}) {
-    if (component.hasOwnMethod('onPropsReceived')) {
-      callHook(() =>
-        component.onPropsReceived!.call(component.sandbox, nextProps),
-      )
-    }
+    callHook(component, 'onPropsReceived', nextProps)
   },
 
   onComponentUpdated(component: Component, prevProps: Props = {}) {
-    if (component.hasOwnMethod('onUpdated')) {
-      callHook(() => component.onUpdated!.call(component.sandbox, prevProps))
-    }
+    callHook(component, 'onUpdated', prevProps)
   },
 
   onComponentDestroyed(component: Component) {
     component.destroy()
-    if (component.hasOwnMethod('onDestroyed')) {
-      callIgnoringCommands(component, () =>
-        component.onDestroyed!.call(component.sandbox),
-      )
-    }
+    callIgnoringCommands(component, 'onDestroyed')
     if (component.content) {
       this.onNodeDestroyed(component.content)
     }
@@ -213,11 +238,7 @@ const Lifecycle = {
     if (component.content) {
       this.onNodeDetached(component.content)
     }
-    if (component.hasOwnMethod('onDetached')) {
-      callIgnoringCommands(component, () =>
-        component.onDetached!.call(component.sandbox),
-      )
-    }
+    callIgnoringCommands(component, 'onDetached')
   },
 
   onElementDetached(element: ParentVirtualNode) {

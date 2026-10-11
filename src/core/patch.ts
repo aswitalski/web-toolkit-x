@@ -7,6 +7,7 @@ import type { State } from './dispatcher.js'
 import DOM from './dom.js'
 import type {
   Component,
+  ComponentClass,
   ParentVirtualNode,
   VirtualElement,
   VirtualNode,
@@ -144,8 +145,38 @@ type Patch =
 /* The patch of the given type. */
 type PatchOf<T extends Patch['type']> = Extract<Patch, { type: T }>
 
+/* The name of a node, e.g. <li> or the name of a component. */
+const getNodeName = (node: VirtualNode): string => {
+  if (node.isElement()) {
+    return `<${node.description.name}>`
+  }
+  if (node.isComponent()) {
+    return (node.constructor as ComponentClass).displayName
+  }
+  return `#${node.nodeType}`
+}
+
+/* The node a patch changes, the parent of the child nodes it changes. */
+const getChangedNode = (patch: Patch): VirtualNode => {
+  if ('target' in patch) {
+    return patch.target
+  }
+  if ('parent' in patch) {
+    return patch.parent
+  }
+  return 'root' in patch ? patch.root : patch.node
+}
+
 const Patch = {
   Type,
+
+  /**
+   * Describes the patch, e.g. when it fails, as its type and the node
+   * it changes.
+   */
+  describe(patch: Patch): string {
+    return `the ${patch.type} patch of ${getNodeName(getChangedNode(patch))}`
+  },
 
   /**
    * Applies the change to the virtual and rendered DOM.
