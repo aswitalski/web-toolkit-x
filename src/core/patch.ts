@@ -3,6 +3,7 @@ import type {
   Listener,
   NodeDescription,
 } from './description.js'
+import type { State } from './dispatcher.js'
 import DOM from './dom.js'
 import type {
   Component,
@@ -19,6 +20,7 @@ const Type = {
   INIT_ROOT_COMPONENT: 'init-root-component',
   UPDATE_NODE: 'update-node',
   UPDATE_ROOT: 'update-root',
+  UPDATE_STATE: 'update-state',
   SET_ATTRIBUTE: 'set-attribute',
   REMOVE_ATTRIBUTE: 'remove-attribute',
   SET_DATA_ATTRIBUTE: 'set-data-attribute',
@@ -54,6 +56,7 @@ type Patch =
       root: WebComponent
       description: ComponentDescription
     }
+  | { type: 'update-state'; root: WebComponent; prevState: State; state: State }
   | {
       type: 'set-attribute'
       name: string
@@ -161,6 +164,12 @@ const Patch = {
         return
       case Type.UPDATE_ROOT:
         patch.root.update(patch.description)
+        // a root failing to render the props keeps its description,
+        // to render them on the next update
+        patch.root.description = patch.description
+        return
+      case Type.UPDATE_STATE:
+        // the root keeps the state once the patches are calculated
         return
       case Type.SET_ATTRIBUTE: {
         const { target, name, value, isCustom } = patch
@@ -254,6 +263,18 @@ const Patch = {
     description: ComponentDescription,
   ): PatchOf<'update-root'> {
     return { type: Type.UPDATE_ROOT, root, description }
+  },
+
+  /*
+   * Updates a root rendering its own state, keeping the description
+   * passed by the parent.
+   */
+  updateState(
+    root: WebComponent,
+    prevState: State,
+    state: State,
+  ): PatchOf<'update-state'> {
+    return { type: Type.UPDATE_STATE, root, prevState, state }
   },
 
   insertChild(

@@ -264,6 +264,9 @@ const Lifecycle = {
       case Type.UPDATE_NODE:
         this.onNodeReceivedDescription(patch.node, patch.description)
         return
+      case Type.UPDATE_STATE:
+        this.onComponentReceivedProps(patch.root, patch.state)
+        return
     }
   },
 
@@ -293,6 +296,9 @@ const Lifecycle = {
         return
       case Type.UPDATE_NODE:
         this.onNodeUpdated(patch.node, patch.prevDescription)
+        return
+      case Type.UPDATE_STATE:
+        this.onComponentUpdated(patch.root, patch.prevState)
         return
     }
   },

@@ -81,24 +81,12 @@ class Diff {
       Lifecycle.collectingErrors(errors, () =>
         Lifecycle.beforeUpdate(this.patches),
       )
-      // a nested root failing to render its props keeps its description,
-      // to render them on the next update
-      const failedRoots = new Set<VirtualNode>()
       const applied: Patch[] = []
       for (const patch of this.patches) {
-        if (
-          patch.type === Patch.Type.UPDATE_NODE &&
-          failedRoots.has(patch.node)
-        ) {
-          continue
-        }
         try {
           Patch.apply(patch)
         } catch (error) {
           errors.push(error)
-          if (patch.type === Patch.Type.UPDATE_ROOT) {
-            failedRoots.add(patch.root)
-          }
           continue
         }
         applied.push(patch)
@@ -122,30 +110,43 @@ class Diff {
       return
     }
 
-    const template: unknown[] = [this.root.constructor, nextState]
+    // the root keeps the description passed by the parent, compared
+    // when the parent updates it, and renders its own state
+    const description = this.describeRoot(nextState)
+    const nodeDescription = this.root.renderDescription(
+      description.props,
+      description.childrenAsTemplates,
+    )
+    this.componentContentPatches(nodeDescription, this.root)
+
+    // the hooks are called with the states, as with props, but not
+    // when the root is rendered initially, as for other components
+    if (currentState) {
+      this.addPatch(Patch.updateState(this.root, currentState, nextState))
+    }
+
+    // the custom attributes rendered with the previous state, or the ones
+    // the custom element is created with
+    const attrs = currentState
+      ? this.describeRoot(currentState).attrs
+      : this.root.description.attrs
+    if (attrs || description.attrs) {
+      this.attributePatches(attrs, description.attrs, this.root, true)
+    }
+  }
+
+  /**
+   * Describes the root rendering the state, with the children passed
+   * by the parent.
+   */
+  describeRoot(state: State): ComponentDescription {
+    const template: unknown[] = [this.root.constructor, state]
     if (this.root.description.children) {
       template.push(
         ...this.root.description.children.map(child => child.asTemplate),
       )
     }
-
-    const description = Template.describe(template) as ComponentDescription
-
-    // the root is rendered initially even when the description is equal
-    if (
-      !this.root.isInitialized ||
-      !Diff.deepEqual(this.root.description, description)
-    ) {
-      this.componentPatches(this.root, description)
-    }
-    if (this.root.description.attrs || description.attrs) {
-      this.attributePatches(
-        this.root.description.attrs,
-        description.attrs,
-        this.root,
-        true,
-      )
-    }
+    return Template.describe(template) as ComponentDescription
   }
 
   /**
@@ -209,11 +210,10 @@ class Diff {
         // the child nodes of a Web Component are rendered in the light DOM
         this.childrenPatches(child.childNodes, description.children, child)
         // the root renders its own content when the patches are applied,
-        // before the node is updated, as it compares its description
+        // calling its own hooks with its state, not with the props
         this.addPatch(
           Patch.updateRoot(child, description as ComponentDescription),
         )
-        this.addPatch(Patch.updateNode(child, description))
         return
       }
       return this.componentPatches(child, description as ComponentDescription)

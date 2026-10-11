@@ -195,6 +195,177 @@ describe('Custom element', () => {
     assert.equal(nested.shadow!.textContent, '2')
   })
 
+  it('calls the hooks of a nested root with its own state', async () => {
+    // given
+    const onPropsReceived = vi.fn()
+    const onUpdated = vi.fn()
+    interface State {
+      value: number
+      updates: number
+    }
+    class Nested extends toolkit.WebComponent<{ value: number }, State> {
+      static elementName = `custom-element-root-${counter++}`
+
+      getInitialState({ value }: { value: number }) {
+        return { value, updates: 0 }
+      }
+
+      getUpdatedState({ value }: { value: number }, state: State) {
+        return { value, updates: state.updates + 1 }
+      }
+
+      onPropsReceived(nextState: State) {
+        onPropsReceived(nextState)
+      }
+
+      onUpdated(prevState: State) {
+        onUpdated(prevState)
+      }
+
+      render(): Template {
+        return ['span', String(this.props.value)]
+      }
+    }
+    class App extends toolkit.WebComponent<object, { value: number }> {
+      getInitialState() {
+        return { value: 1 }
+      }
+
+      render(): Template {
+        return ['main', [Nested, { value: this.props.value }]]
+      }
+    }
+    const app = await toolkit.render(App, container)
+    const nested = (app.content as VirtualElement).children![0] as WebComponent
+    await nested.ready
+    onPropsReceived.mockClear()
+    onUpdated.mockClear()
+
+    // when
+    await app.commands.update({ value: 2 })
+
+    // then
+    expect(onPropsReceived).toHaveBeenCalledExactlyOnceWith({
+      value: 2,
+      updates: 1,
+    })
+    expect(onUpdated).toHaveBeenCalledExactlyOnceWith({ value: 1, updates: 0 })
+  })
+
+  describe('nested root updating its own state', () => {
+    interface State {
+      value: number
+      updates: number
+    }
+
+    const createNestedRoot = (
+      onPropsReceived: (nextState: State) => void,
+      onUpdated: (prevState: State) => void,
+    ) =>
+      class Nested extends toolkit.WebComponent<{ value: number }, State> {
+        static elementName = `custom-element-root-${counter++}`
+
+        getInitialState({ value }: { value: number }) {
+          return { value, updates: 0 }
+        }
+
+        getUpdatedState({ value }: { value: number }, state: State) {
+          return { value, updates: state.updates + 1 }
+        }
+
+        onPropsReceived(nextState: State) {
+          onPropsReceived(nextState)
+        }
+
+        onUpdated(prevState: State) {
+          onUpdated(prevState)
+        }
+
+        render(): Template {
+          return ['span', String(this.props.value)]
+        }
+      }
+
+    const renderApp = async (Nested: ReturnType<typeof createNestedRoot>) => {
+      class App extends toolkit.WebComponent<
+        object,
+        { value: number; label: string }
+      > {
+        getInitialState() {
+          return { value: 1, label: 'a' }
+        }
+
+        render(): Template {
+          const { value, label } = this.props
+          return ['main', { title: label }, [Nested, { value }]]
+        }
+      }
+      const app = await toolkit.render(App, container)
+      const nested = (app.content as VirtualElement)
+        .children![0] as WebComponent
+      await nested.ready
+      return [app, nested] as const
+    }
+
+    it('calls the hooks with its states once the parent updated it', async () => {
+      // given
+      const onPropsReceived = vi.fn()
+      const onUpdated = vi.fn()
+      const [app, nested] = await renderApp(
+        createNestedRoot(onPropsReceived, onUpdated),
+      )
+      await app.commands.update({ value: 2 })
+      onPropsReceived.mockClear()
+      onUpdated.mockClear()
+
+      // when
+      await nested.commands.update({ updates: 10 })
+
+      // then
+      expect(onPropsReceived).toHaveBeenCalledExactlyOnceWith({
+        value: 2,
+        updates: 10,
+      })
+      expect(onUpdated).toHaveBeenCalledExactlyOnceWith({
+        value: 2,
+        updates: 1,
+      })
+    })
+
+    it('does not receive the same props again', async () => {
+      // given
+      const onPropsReceived = vi.fn()
+      const onUpdated = vi.fn()
+      const [app, nested] = await renderApp(
+        createNestedRoot(onPropsReceived, onUpdated),
+      )
+      await nested.commands.update({ updates: 10 })
+      onPropsReceived.mockClear()
+      onUpdated.mockClear()
+
+      // when
+      await app.commands.update({ label: 'b' })
+
+      // then
+      expect(onPropsReceived).not.toHaveBeenCalled()
+      expect(onUpdated).not.toHaveBeenCalled()
+      expect(nested.state).toEqual({ value: 1, updates: 10 })
+    })
+
+    it('does not call the update hooks when rendered initially', async () => {
+      // given
+      const onPropsReceived = vi.fn()
+      const onUpdated = vi.fn()
+
+      // when
+      await renderApp(createNestedRoot(onPropsReceived, onUpdated))
+
+      // then
+      expect(onPropsReceived).not.toHaveBeenCalled()
+      expect(onUpdated).not.toHaveBeenCalled()
+    })
+  })
+
   it('updates the parent when a nested root fails to render', async () => {
     // given
     class Nested extends toolkit.WebComponent<{ value: number }> {

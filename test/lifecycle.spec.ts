@@ -3,6 +3,7 @@ import Lifecycle from '../src/core/lifecycle.js'
 import Patch from '../src/core/patch.js'
 import Template from '../src/core/template.js'
 import {
+  type AnyComponent,
   type AnyElement,
   type AnyNode,
   createFromTemplate,
@@ -391,6 +392,18 @@ describe('Lifecycle', () => {
       // then
       assertOnPropsReceivedCalled(component, updatedProps)
     })
+
+    it('=> is called with the next state before updating root', () => {
+      // given
+      const root = createRootInstance(Root) as AnyComponent
+      const patches = [Patch.updateState(root, { value: 1 }, { value: 2 })]
+
+      // when
+      Lifecycle.beforeUpdate(patches)
+
+      // then
+      assertOnPropsReceivedCalled(root, { value: 2 })
+    })
   })
 
   describe('on updated', () => {
@@ -418,6 +431,18 @@ describe('Lifecycle', () => {
 
       // then
       assertOnUpdatedCalled(component, props)
+    })
+
+    it('=> is called with the previous state after updating root', () => {
+      // given
+      const root = createRootInstance(Root) as AnyComponent
+      const patches = [Patch.updateState(root, { value: 1 }, { value: 2 })]
+
+      // when
+      Lifecycle.afterUpdate(patches)
+
+      // then
+      assertOnUpdatedCalled(root, { value: 1 })
     })
   })
 
