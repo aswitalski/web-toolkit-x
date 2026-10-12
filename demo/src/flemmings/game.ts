@@ -34,6 +34,7 @@ class Game extends WebComponent<GameState, typeof GameCommands> {
       world: createWorld(),
       flemmings: [],
       ripples: [],
+      mud: [],
       disabledClouds: {},
       time: null,
     }
@@ -86,6 +87,10 @@ class Game extends WebComponent<GameState, typeof GameCommands> {
     void this.commands.dip(id)
   }
 
+  onStir(id: number, time: number) {
+    void this.commands.stir(id, time)
+  }
+
   onReady(id: number) {
     void this.commands.ready(id)
   }
@@ -98,13 +103,13 @@ class Game extends WebComponent<GameState, typeof GameCommands> {
    * Stops a flemming or lets it walk on, makes a falling one dive, or releases
    * a blocker.
    */
-  onFlemmingClick(id: number) {
-    void this.commands.toggle(id)
+  onFlemmingClick(id: number, time: number) {
+    void this.commands.toggle(id, time)
   }
 
   /* Makes a blocker, or keeps walking a blocker its first click released. */
-  onFlemmingDblClick(id: number) {
-    void this.commands.block(id)
+  onFlemmingDblClick(id: number, time: number) {
+    void this.commands.block(id, time)
   }
 
   /* Stops all the walking ones, and the ones about to walk on. */
@@ -113,12 +118,13 @@ class Game extends WebComponent<GameState, typeof GameCommands> {
   }
 
   render(): Template {
-    const { world, flemmings, ripples } = this.props
+    const { world, flemmings, ripples, mud } = this.props
     return [
       World,
       {
         world,
         ripples,
+        mud,
         onCloudClick: this.onCloudClick,
         onGroundDblClick: this.onGroundDblClick,
       },
@@ -130,6 +136,7 @@ class Game extends WebComponent<GameState, typeof GameCommands> {
           onClick: this.onFlemmingClick,
           onDblClick: this.onFlemmingDblClick,
           onDip: this.onDip,
+          onStir: this.onStir,
           onHeadChange: this.onHeadChange,
           onReady: this.onReady,
         },

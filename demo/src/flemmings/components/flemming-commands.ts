@@ -17,8 +17,19 @@ const RESTING: Range = [8, 15]
 const WADING: Range = [6, 24]
 const FIRST_WADING: Range = [1, 30]
 
-/* The chance of stirring up the mud before feeding, 3 times out of 4. */
-const STIRRING_CHANCE = 0.75
+/* The chance of stirring up the mud before feeding, 9 times out of 10. */
+const STIRRING_CHANCE = 0.9
+
+/*
+ * The treads of stirring it up, of 0.4s each, mostly 5, sometimes about 1, 2
+ * or 3 seconds more, with the weights of the chances.
+ */
+const TREADS: [number, number][] = [
+  [5, 4],
+  [8, 2],
+  [10, 1],
+  [13, 1],
+]
 
 /* The seconds of doing something when bored, saluting as long as it lasts. */
 const DURATIONS: Record<Idle, Range> = {
@@ -49,11 +60,11 @@ const ON_ONE_LEG: [Choice, number][] = [
  */
 const PLUMAGE = { darkest: 920, lightest: 1400 }
 
-const choose = (choices: [Choice, number][]): Choice => {
+const choose = <T>(choices: [T, number][]): T => {
   const total = choices.reduce((sum, [, weight]) => sum + weight, 0)
   let chance = Math.random() * total
   const chosen = choices.find(([, weight]) => (chance -= weight) < 0)
-  return chosen?.[0] ?? 'looking-back'
+  return (chosen ?? choices[0]!)[0]
 }
 
 const getRestingTime = (activity: Activity) =>
@@ -77,7 +88,7 @@ export const createElementState = (
   ending: null,
   oneLeg: false,
   loweringLeg: false,
-  stirring: false,
+  treads: 0,
   settling: null,
   skipped: 0,
   idleTime:
@@ -89,7 +100,7 @@ export const createElementState = (
 
 const FlemmingCommands = {
   /*
-   * Rests and does something else now and then: feeds when wading, mostly
+   * Rests and does something else now and then: feeds when wading, almost always
    * stirring up the mud first, and when standing switches the legs it stands
    * on, or does what it can on them. Ignored when the phase it was timed for
    * has already changed.
@@ -102,7 +113,7 @@ const FlemmingCommands = {
     if (this.idle) {
       this.ending = this.idle
       this.idle = null
-      this.stirring = false
+      this.treads = 0
       this.idleTime = getRestingTime(this.activity)
       return
     }
@@ -122,7 +133,8 @@ const FlemmingCommands = {
         choice === 'feeding'
           ? uniform(DURATIONS.feeding)
           : triangular(DURATIONS[choice])
-      this.stirring = choice === 'feeding' && Math.random() < STIRRING_CHANCE
+      const stirring = choice === 'feeding' && Math.random() < STIRRING_CHANCE
+      this.treads = stirring ? choose(TREADS) : 0
     }
   },
 } satisfies CommandsAPI<FlemmingElementState>

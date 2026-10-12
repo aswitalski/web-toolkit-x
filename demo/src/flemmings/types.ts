@@ -42,6 +42,8 @@ export interface Flemming {
   position: Position
   /* The falling speed, in sprite pixels per second. */
   velocity: number
+  /* The milliseconds it has walked since it started, for its stride. */
+  walkingFor: number
   /* Feeding, sleeping or preening, not flagging the head with the others. */
   headDown: boolean
   /*
@@ -51,8 +53,9 @@ export interface Flemming {
    */
   timeLeft: number
   /*
-   * What it does once settled, or instead of walking on once turned around
-   * or with the wings folded, and whether it has settled.
+   * What it does once settled, or instead of walking on, once the step is
+   * finished, turned around or with the wings folded, and whether it has
+   * settled.
    */
   next: Activity | null
   ready: boolean
@@ -63,7 +66,10 @@ export interface Flemming {
    */
   flagGroup: number | null
   flagFor: number
-  /* The time it stopped blocking, in milliseconds, by a click. */
+  /*
+   * The time of the click it stopped blocking at, in milliseconds, as the
+   * clicks are timed, not slowed down with the animations.
+   */
   releasedAt: number | null
   /*
    * The time the group it stands or wades in flags the heads, the same for
@@ -77,12 +83,13 @@ export interface Flemming {
 /*
  * The props of a flemming element, which knows nothing about its position,
  * with the callbacks telling the game when it dips its head in the water,
- * puts it down or up, and once it has settled.
+ * stirs up the mud, puts its head down or up, and once it has settled.
  */
 export interface FlemmingProps {
   activity: Activity
   direction: Direction
   onDip: () => void
+  onStir: (time: number) => void
   onHeadChange: (down: boolean) => void
   onReady: () => void
 }
@@ -113,8 +120,8 @@ export interface FlemmingElementState extends FlemmingProps {
   oneLeg: boolean
   /* Putting the tucked leg down, until it does something else. */
   loweringLeg: boolean
-  /* Treading to stir up the mud before feeding. */
-  stirring: boolean
+  /* The treads of stirring up the mud before feeding, none when not. */
+  treads: number
   /*
    * What it finishes when settling, null when nothing, and the milliseconds
    * of it skipped, starting from the frame it showed.
@@ -151,10 +158,25 @@ export interface Ripple {
   time: number
 }
 
+/*
+ * A cloud of the mud a flemming stirs up treading it, rising from the bottom
+ * at its feet at x, in sprite pixels, numbered after the ones there are.
+ */
+export interface Mud {
+  id: number
+  x: number
+  /* The depth of the water there, above the bottom. */
+  depth: number
+  /* The time it started, and the milliseconds of stirring it up. */
+  time: number
+  stirring: number
+}
+
 export interface GameState {
   world: World
   flemmings: Flemming[]
   ripples: Ripple[]
+  mud: Mud[]
   /* The times the clicked clouds are disabled until, by their ids. */
   disabledClouds: Record<string, number>
   /* The time of the last update, in milliseconds, null before the first one. */

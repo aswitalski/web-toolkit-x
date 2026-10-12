@@ -9,10 +9,10 @@ import FlemmingCommands, {
 
 /*
  * The milliseconds from starting to feed to the head under the water, after
- * stirring up the mud or straight away, as styled.
+ * the treads of stirring up the mud, if any, as styled.
  */
-const DIPPING_AFTER_STIRRING = 1500
 const DIPPING = 300
+const TREAD_TIME = 400
 
 /*
  * The frames of finishing what it does when settling, ending standing on both
@@ -25,17 +25,22 @@ const SETTLING_FRAMES: Record<Settling, number[]> = {
   sleeping: [22, 21, 20, 19, 16, 15, 4],
   preening: [24, 8, 7, 5, 4],
   saluting: [27, 26, 4],
-  feeding: [13, 12, 11, 4],
+  feeding: [35, 12, 11, 4],
   flagging: [8, 7, 6, 5, 4],
 }
 const SETTLING_FRAME_TIME = 50
 
 /*
- * The frames held after the ones before them, settled from as those: sifting
- * the water, breathing asleep and nibbling the wing. Treading the mud isn't
- * settled from, as it stands on both legs.
+ * The frames settled from as others: sifting the mud, as the head under the
+ * water raised from it, breathing asleep and nibbling the wing. Treading the
+ * mud isn't settled from, as it stands on both legs.
  */
-const HELD_FRAMES: Partial<Record<number, number>> = { 14: 13, 23: 22, 25: 24 }
+const HELD_FRAMES: Partial<Record<number, number>> = {
+  13: 35,
+  14: 35,
+  23: 22,
+  25: 24,
+}
 
 /*
  * What a flemming finishes when settling from what it does: turning the head
@@ -87,6 +92,23 @@ const getSettling = (
     }
   }
   return { settling: null, skipped: 0 }
+}
+
+/*
+ * Calls back once the milliseconds have passed on the clock of the animations,
+ * checked on each frame, so that its timers slow down with them, e.g. in
+ * DevTools, and stop with them in a background tab.
+ */
+const afterAnimationTime = (callback: () => void, ms: number) => {
+  const end = (document.timeline.currentTime as number) + ms
+  const frame = (time: number) => {
+    if (time >= end) {
+      callback()
+    } else {
+      requestAnimationFrame(frame)
+    }
+  }
+  requestAnimationFrame(frame)
 }
 
 /* The head down in the water, on the back or at the wing. */
@@ -147,6 +169,9 @@ class Flemming extends WebComponent<
     if (this.props.phase !== prevState.phase) {
       this.schedule()
       if (this.props.idle === 'feeding') {
+        if (this.props.treads) {
+          this.props.onStir(this.props.treads * TREAD_TIME)
+        }
         this.dip()
       }
       if (this.props.activity === 'settling') {
@@ -162,20 +187,20 @@ class Flemming extends WebComponent<
   /* Tells when the head goes under the water, unless it stopped feeding. */
   dip() {
     const { phase } = this.props
-    setTimeout(
+    afterAnimationTime(
       () => {
         if (this.props.phase === phase) {
           this.props.onDip()
         }
       },
-      this.props.stirring ? DIPPING_AFTER_STIRRING : DIPPING,
+      this.props.treads * TREAD_TIME + DIPPING,
     )
   }
 
   /* Tells when it has finished what it did, unless doing something else. */
   settle() {
     const { phase, settling, skipped } = this.props
-    setTimeout(
+    afterAnimationTime(
       () => {
         if (this.props.phase === phase) {
           this.props.onReady()
@@ -191,7 +216,10 @@ class Flemming extends WebComponent<
   schedule() {
     const { activity, idleTime, phase } = this.props
     if (activity === 'standing' || activity === 'wading') {
-      setTimeout(() => void this.commands.advance(phase), idleTime * 1000)
+      afterAnimationTime(
+        () => void this.commands.advance(phase),
+        idleTime * 1000,
+      )
     }
   }
 
@@ -203,7 +231,7 @@ class Flemming extends WebComponent<
       ending,
       oneLeg,
       loweringLeg,
-      stirring,
+      treads,
       settling,
       skipped,
       plumage,
@@ -219,10 +247,15 @@ class Flemming extends WebComponent<
           idle,
           ending && `${ending}-end`,
           settling && `from-${settling}`,
-          { 'one-leg': oneLeg, 'lowering-leg': loweringLeg, stirring },
+          {
+            'one-leg': oneLeg,
+            'lowering-leg': loweringLeg,
+            stirring: treads > 0,
+          },
         ],
         style: {
           '--plumage': plumage,
+          '--treads': treads,
           // settling from the frame it showed
           animationDelay: skipped > 0 && [-skipped, 'ms'],
         },

@@ -18,7 +18,7 @@ npm run demo
 | ----------------------------------- | ------------------------------------------------------------------------------- |
 | Click a cloud                       | Drops a flemming out of it, each cloud needing a moment before dropping another |
 | Click a falling flemming            | It folds its wings and dives, falling faster                                    |
-| Click a walking flemming            | It stands on the ground, or wades in water deep enough                          |
+| Click a walking flemming            | It finishes its step and stands on the ground, or wades in water deep enough    |
 | Click a standing or wading flemming | It finishes what it does and walks on, the same way as before                   |
 | Double-click a flemming             | It finishes what it does and becomes a blocker                                  |
 | Click a blocker                     | It folds its wings and walks on, the same way as before                         |
@@ -34,8 +34,9 @@ on its feet and starts walking to the right.
 
 ### Walking
 
-It walks slowly, its steps matching its stride. At a window border or just before a
-blocker, it turns its head, then its body, and walks back.
+It walks slowly, its steps matching its stride, starting and stopping with its legs
+together. At a window border or just before a blocker, it turns its head, then its body,
+and walks back.
 
 When the window gets narrower, the walking flemmings beyond its new border walk back in,
 while the ones standing there stay where they are. When it gets wider, the landscape
@@ -50,6 +51,7 @@ into it and out of it, the water covering their legs.
   and two flying off in random directions
 - Walking out of it makes a smaller splash, of the legs crossing the surface
 - Dipping the head when feeding makes a splash at the head
+- Treading the mud before feeding stirs a little of it up around the feet
 
 A flemming stopped in the deeper water wades, otherwise it stands.
 
@@ -76,8 +78,8 @@ the same way it started, e.g. turning the head ahead again or untucking it.
 ### Wading
 
 A wading flemming rests for a while, then feeds, lowering its head into the water and
-sifting it, mostly treading the mud first to stir it up. The ones wading together drift
-apart instead of feeding in sync.
+sifting it, almost always treading the mud first to stir it up, now and then for longer.
+The ones wading together drift apart instead of feeding in sync.
 
 ### Groups
 

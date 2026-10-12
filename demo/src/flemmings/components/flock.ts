@@ -6,12 +6,13 @@ import Flemming from './flemming.js'
 
 /*
  * The listeners of the game, for the clicks on a flemming, and the callbacks
- * of a flemming, all called with its id.
+ * of a flemming, all called with its id, the clicks also with their times.
  */
 interface Listeners {
-  onClick: (id: number) => void
-  onDblClick: (id: number) => void
+  onClick: (id: number, time: number) => void
+  onDblClick: (id: number, time: number) => void
   onDip: (id: number) => void
+  onStir: (id: number, time: number) => void
   onHeadChange: (id: number, down: boolean) => void
   onReady: (id: number) => void
 }
@@ -39,15 +40,19 @@ class Bird extends Component<BirdProps> {
     if (event.detail > 1) {
       return
     }
-    this.props.onClick(this.props.flemming.id)
+    this.props.onClick(this.props.flemming.id, event.timeStamp)
   }
 
-  onDblClick() {
-    this.props.onDblClick(this.props.flemming.id)
+  onDblClick(event: MouseEvent) {
+    this.props.onDblClick(this.props.flemming.id, event.timeStamp)
   }
 
   onDip() {
     this.props.onDip(this.props.flemming.id)
+  }
+
+  onStir(time: number) {
+    this.props.onStir(this.props.flemming.id, time)
   }
 
   onHeadChange(down: boolean) {
@@ -84,6 +89,7 @@ class Bird extends Component<BirdProps> {
           activity,
           direction,
           onDip: this.onDip,
+          onStir: this.onStir,
           onHeadChange: this.onHeadChange,
           onReady: this.onReady,
         },

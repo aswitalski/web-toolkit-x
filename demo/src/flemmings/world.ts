@@ -9,11 +9,12 @@ import Landscape, {
   Water,
 } from './components/landscape.js'
 import Ripples from './components/ripples.js'
-import type { Ripple, World as WorldData } from './types.js'
+import type { Mud, Ripple, World as WorldData } from './types.js'
 
 interface WorldProps {
   world: WorldData
   ripples: Ripple[]
+  mud: Mud[]
   onCloudClick: (id: string, time: number) => void
   onGroundDblClick: () => void
 }
@@ -25,7 +26,7 @@ interface WorldProps {
  */
 class World extends Component<WorldProps> {
   render(): Template {
-    const { world, ripples, onCloudClick, onGroundDblClick } = this.props
+    const { world, ripples, mud, onCloudClick, onGroundDblClick } = this.props
     const { width, pixel } = world
     const flemmings = this.children
     return [
@@ -38,7 +39,7 @@ class World extends Component<WorldProps> {
       [Ripples, { ripples, pixel }],
       ...flemmings,
       [Clouds, { world, onClick: onCloudClick }],
-      [Water, { pixel }],
+      [Water, { pixel, mud }],
     ]
   }
 }

@@ -45,24 +45,25 @@ and on a particular flemming, by its id:
 | `ready`       | Lets a settled flemming do the next thing                         |
 | `setHeadDown` | Keeps whether a flemming has its head down                        |
 | `dip`         | Splashes the water where a flemming dips its head                 |
+| `stir`        | Clouds the water where a flemming treads the mud                  |
 
 It renders the [World](#world) with the [Flock](../components/flock.ts) in it, a plain
 component rendering a Bird for each flemming. A Bird places the flemming in the world,
-with its size and clipping out of a cloud, and renders the Flemming, passing it only what
-it needs, as props, with its methods calling the listeners and the callbacks of the game
-with its id.
+clipping it while out of a cloud, its size set by the stylesheet, and renders the
+Flemming, passing it only what it needs, as props, with its methods calling the listeners
+and the callbacks of the game with its id.
 
 ### World
 
 The [World](../world.ts) plain component renders the scene from the world, the size of
-the window and of a sprite pixel, and the splashes, with the flemmings given as its
+the window and of a sprite pixel, the splashes and the mud, with the flemmings given as its
 children, placed in front of the land and behind the clouds and the water. It takes the
 listeners of the clicks on the clouds and the ground from the game.
 
 It renders the [Landscape](../components/landscape.ts), the `<main>` element as wide as the
 world, with its layers as children: the sky, the sun, the ground, the trees, the clouds and
-the water, from the same file, and the [ripples](../components/ripples.ts), with a splash
-for each one, all plain components too.
+the water with the mud stirred up in it, from the same file, and the
+[ripples](../components/ripples.ts), with a splash for each one, all plain components too.
 
 ### Flemming
 
@@ -75,7 +76,7 @@ Its props are what it does and which way it faces, and the [callbacks](#callback
 the game what only the flemming knows:
 
 ```ts
-{ activity: 'walking', direction: 'right', onDip, onHeadChange, onReady }
+{ activity: 'walking', direction: 'right', onDip, onStir, onHeadChange, onReady }
 ```
 
 The activity is one of the [activities](#activities), and the direction `left` or `right`.
@@ -103,6 +104,7 @@ The state of the game, `GameState`, holds:
   and the timing of what it does, e.g. the time left of turning around, the time its group
   flags the heads, or the activity it does once settled
 - `ripples`: the splashes on the water, removed once over
+- `mud`: the clouds of mud stirred up in the water, removed once settled
 - `disabledClouds`: the times the clicked clouds drop flemmings again
 - `time`: the time of the last update
 
@@ -123,7 +125,7 @@ when it is created and kept, and what it does when bored:
 - `idle`: looking back, preening, saluting, sleeping or feeding, `null` when resting
 - `ending`: what it just did, turned back until it does something else
 - `oneLeg`, `loweringLeg`: standing on one leg, or putting the other one down
-- `stirring`: treading the mud before feeding
+- `treads`: the treads of stirring up the mud before feeding, mostly 5, sometimes more
 - `idleTime`: the seconds until it does something else
 - `settling`, `skipped`: what it finishes when settling, e.g. putting the leg down, and
   the part of it skipped, already past the frame it shows
@@ -155,7 +157,8 @@ The components react to their lifecycle with these methods:
 - `onAttached()`: the game drops the first flemming out of the leftmost cloud in the window
   and starts the animation loop, and a flemming starts its timer
 - `onUpdated()`: a flemming starts the timer of what it does next, and tells the game when
-  its head goes down or up, under the water, or once settled
+  its head goes down or up, when it stirs up the mud, when its head goes under the water,
+  and once settled
 
 ### Animation loop
 
@@ -183,15 +186,16 @@ requestAnimationFrame(time => {
 - The loop stops once the game is destroyed, as `tick` resolves with `false`
 - A failed tick is logged and the loop goes on
 - Slowing down the animations in DevTools slows down both the frame time and the CSS
-  animations, so the movement stays in sync with them, but not the [timers](#timers) of a
-  flemming
+  animations, so the movement and the [timers](#timers) of the flemmings stay in sync
+  with them
 
 ### Timers
 
-A flemming times what it does with `setTimeout`, each timer taking the phase it was set in.
-When it fires, the `advance` command is ignored if the phase has changed since, e.g. when
-the game made it walk, and so are the callbacks. These timers aren't slowed down with the
-animations in DevTools.
+A flemming times what it does by the clock of the animations, checked on each frame,
+rather than with `setTimeout`, so that its timers slow down with the animations in
+DevTools, and stop with them in a background tab. Each timer takes the phase it was set
+in. When it fires, the `advance` command is ignored if the phase has changed since, e.g.
+when the game made it walk, and so are the callbacks.
 
 ## Callbacks
 
@@ -208,13 +212,14 @@ onHeadChange(down: boolean) {
 The methods of a component read as `this.onHeadChange` are bound once, the same on each
 render, so the props of a flemming stay equal while it keeps doing the same thing, and it
 isn't updated on every frame, as it would be with new arrow functions. The listeners of the
-clicks on a Bird and a cloud are their methods too, calling the game with their ids, the
-Bird ignoring the second click of a double-click.
+clicks on a Bird and a cloud are their methods too, calling the game with their ids and
+the times of the clicks, the Bird ignoring the second click of a double-click.
 
 | Callback       | When                                       | Command       | Effect                    |
 | -------------- | ------------------------------------------ | ------------- | ------------------------- |
 | `onHeadChange` | Its head goes down or up                   | `setHeadDown` | Head-down ones don't flag |
 | `onDip`        | Its head goes under the water when feeding | `dip`         | A splash at the head      |
+| `onStir`       | It treads the mud before feeding, how long | `stir`        | Mud at the feet           |
 | `onReady`      | It has finished what it did, when settling | `ready`       | It does the next thing    |
 
 The game decides, the flemming informs: the game never asks a flemming for its state.
@@ -223,18 +228,18 @@ The game decides, the flemming informs: the game never asks a flemming for its s
 
 The activity is what the game tells a flemming to do:
 
-| Activity     | Does                                          | Then                                    |
-| ------------ | --------------------------------------------- | --------------------------------------- |
-| `falling`    | Falls slowly, flapping its wings              | `walking` on landing                    |
-| `diving`     | Falls faster, with its wings folded           | `walking` on landing                    |
-| `walking`    | Walks, in step with its stride                | `turning` at a border or a blocker      |
-| `turning`    | Turns the head, then the body                 | `walking` the other way, unless stopped |
-| `standing`   | Stands, doing something when bored            | `settling`                              |
-| `wading`     | Stands in deeper water, feeding now and then  | `settling`                              |
-| `blocking`   | Spreads its wings, holding them open          | `unblocking`                            |
-| `unblocking` | Folds its wings                               | `walking`, unless stopped               |
-| `flagging`   | Turns the head to the other side for a moment | `standing` or `wading`, turning it back |
-| `settling`   | Quickly finishes what it does                 | The next activity, once ready           |
+| Activity     | Does                                          | Then                                                      |
+| ------------ | --------------------------------------------- | --------------------------------------------------------- |
+| `falling`    | Falls slowly, flapping its wings              | `walking` on landing                                      |
+| `diving`     | Falls faster, with its wings folded           | `walking` on landing                                      |
+| `walking`    | Walks, in step with its stride                | `turning` at a border or a blocker, or stops after a step |
+| `turning`    | Turns the head, then the body                 | `walking` the other way, unless stopped                   |
+| `standing`   | Stands, doing something when bored            | `settling`                                                |
+| `wading`     | Stands in deeper water, feeding now and then  | `settling`                                                |
+| `blocking`   | Spreads its wings, holding them open          | `unblocking`                                              |
+| `unblocking` | Folds its wings                               | `walking`, unless stopped                                 |
+| `flagging`   | Turns the head to the other side for a moment | `standing` or `wading`, turning it back                   |
+| `settling`   | Quickly finishes what it does                 | The next activity, once ready                             |
 
 A flemming walks back from beyond the window border, when the window gets narrower, and
 turns around just before a blocker.
@@ -246,7 +251,7 @@ something, and rests again:
 
 - On two legs it looks back, preens, salutes or lifts a leg
 - On one leg it looks back, sleeps or puts the leg down
-- Wading, it feeds, mostly treading the mud first
+- Wading, it feeds, almost always treading the mud first
 
 The times of standing cluster around the middle of their ranges, while the ones of
 wading are uniformly random, so the flemmings wading together drift apart.
@@ -287,10 +292,10 @@ standing, on the land or in the shallow water, or wading, facing the same way.
 The components render Bragi templates, plain arrays of the element name, its attributes and
 its children, or of a component, its props and its children. They use:
 
-- keys for the lists of the flemmings, splashes and clouds, so each keeps its node
+- keys for the lists of the flemmings, splashes, clouds and mud, so each keeps its node
 - styles with units, e.g. `width: [width * pixel, 'px']`, and custom properties, like
-  `--pixel`, inherited into the shadow root of a flemming, and `--plumage`
-- class lists and objects, e.g. `{ 'one-leg': oneLeg, stirring }`
+  `--pixel`, inherited into the shadow root of a flemming, `--plumage` and `--treads`
+- class lists and objects, e.g. `{ 'one-leg': oneLeg, stirring: treads > 0 }`
 - `ariaLabel` for the clouds
 - `onClick` and `onDblClick` listeners, and callbacks as props
 
@@ -300,8 +305,8 @@ against the sources in the debug mode.
 
 ### Sprite
 
-A flemming renders an `img` of [`flemming.svg`](../../../flemming.svg), a 528×24 strip of
-33 frames, 16×24 each, drawn with a `crispEdges` path for each colour. Its classes, the
+A flemming renders an `img` of [`flemming.svg`](../../../flemming.svg), a 576×24 strip of
+36 frames, 16×24 each, drawn with a `crispEdges` path for each colour. Its classes, the
 activity, the direction and what it does, pick the CSS animation in
 [`flemming.css`](../../../styles/flemming.css), showing the frames by shifting the image
 with `object-position`, in `steps()` or `step-end` keyframes. A flemming facing left is
@@ -309,11 +314,12 @@ mirrored with `scale: -1 1`, and its plumage set with a `brightness` filter.
 
 | Frames | Shows                                                     |
 | ------ | --------------------------------------------------------- |
-| 0–3    | Walking                                                   |
+| 0–3    | Walking, the legs apart, forward, together and back       |
 | 4      | Standing                                                  |
 | 5–8    | Turning the head to the front and back                    |
 | 9–10   | Falling, flapping the wings                               |
-| 11–14  | Lowering the head and feeding in the water                |
+| 11–12  | Lowering the head into the water                          |
+| 13–14  | Sifting the mud, the head turned beak down                |
 | 15     | Lifting a leg                                             |
 | 16     | Standing on one leg                                       |
 | 17–20  | Turning the head on one leg                               |
@@ -324,6 +330,8 @@ mirrored with `scale: -1 1`, and its plumage set with a `brightness` filter.
 | 28–29  | Treading the mud                                          |
 | 30–31  | Blocking, the body to the front, the head the way it went |
 | 32     | Diving with the wings folded                              |
+| 33–34  | Walking, between the legs forward and together, and back  |
+| 35     | The head under the water, raised from sifting             |
 
 ### Scene
 
@@ -337,7 +345,7 @@ The World renders the layers of the scene, styled in
 5. The splashes, a droplet jumping straight up and two flying off in random directions
 6. The flemmings
 7. The clouds, buttons dropping flemmings, high above the ground
-8. The water, at 80% opacity, covering the legs of the ones in it
+8. The water, at 80% opacity, covering the legs of the ones in it, and the mud they stir up
 
 The outlines of the ground and the water are computed in [`terrain.ts`](../terrain.ts),
 stepping down the banks of the pond, and the clouds are tiled across the world in
@@ -348,12 +356,13 @@ bottom, so it comes out of it, moving with it when the window height changes.
 
 The behaviour is tuned with the constants at the top of each file:
 
-- [`game-commands.ts`](../game-commands.ts): the speeds, turning, the blocking distance,
-  the cloud and double-click times, settling and the groups
+- [`game-commands.ts`](../game-commands.ts): the speeds, walking, turning, the blocking
+  distance, the cloud and double-click times, settling, the groups, the splashes and the
+  mud
 - [`flemming-commands.ts`](../components/flemming-commands.ts): the resting, wading and
   idle times, the weights, stirring and the plumage
-- [`flemming.ts`](../components/flemming.ts): the times of dipping, the frames of settling,
-  and the frames held, settled from as the ones before them
+- [`flemming.ts`](../components/flemming.ts): the times of dipping and of a tread, the
+  frames of settling, and the frames held, settled from as the ones before them
 - [`terrain.ts`](../terrain.ts): the sizes of the frame, the ground and the pond, and the
   height of a flemming, setting the size of a sprite pixel
 - [`clouds.ts`](../clouds.ts): the shapes and places of the clouds, in two tiles, and the
@@ -363,8 +372,9 @@ Some of them repeat the times of the CSS animations, or depend on them, and have
 
 - `TURNING`, `UNBLOCKING` and `FLAGGING_TURN`: the 200ms of turning around, the 300ms of
   blocking and unblocking, and the 550ms of flagging
-- `WALKING_SPEED`: a pixel for each frame of the walk, 4 frames in 320ms
-- `RIPPLE_TIME`: at least the 1000ms of the ripples
+- `PIXEL_TIME`: a pixel walked for each 80ms frame of the stride, 6 of them in 480ms
+- `RIPPLE_TIME` and `MUD_SETTLING`: at least the 1000ms of the ripples and the 2400ms of
+  the mud settling once stirred up
 - `DURATIONS.saluting`: the 1600ms of saluting
-- in `flemming.ts`: the times of dipping, the frames of settling, and the held frames of
-  sifting, breathing and nibbling
+- in `flemming.ts`: the times of dipping and of a tread, the frames of settling, and the
+  held frames of sifting, breathing and nibbling

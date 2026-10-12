@@ -4,11 +4,13 @@
 }
 
 /*
- * The sprite strip of 33 frames, scaled to the height and shifted to a frame
+ * The sprite strip of 36 frames, scaled to the height and shifted to a frame
  * by n frame widths for the frame n:
- * - walking 0-3, falling 9-10, turning around and flagging the head 4-8,
+ * - walking 0-3 and in between 33-34, falling 9-10, turning around and
+ *   flagging the head 4-8,
  * - standing 4, turning the head to the front and back 5-8,
- * - lowering the head 11-12 and feeding in the water 13-14,
+ * - lowering the head 11-12, sifting the mud 13-14 and raising the head out
+ *   of the water 35,
  * - lifting a leg 15, on one leg 16, turning the head 17-20,
  * - tucking the head 21 and sleeping 22-23, breathing,
  * - preening 24-25, saluting with the wings 26-27 and treading 28-29,
@@ -34,8 +36,12 @@ img.left {
   scale: -1 1;
 }
 
+/*
+ * walking from the legs together, a frame for each pixel walked, every 80ms as
+ * timed by the game, so that the foot it stands on stays in its place
+ */
 img.walking {
-  animation: walking 320ms steps(4, jump-none) infinite;
+  animation: walking 480ms step-end infinite;
 }
 
 /* falling slowly flapping the wings, or diving with them folded */
@@ -168,9 +174,9 @@ img.standing.one-leg.sleeping-end {
 }
 
 /*
- * Lowering the head into the water, 0.3s after starting, or 1.5s after
- * treading to stir up the mud first, as timed by the element, and sifting
- * there, then raising it.
+ * Lowering the head into the water, 0.3s after starting, or after treading
+ * the --treads times to stir up the mud first, as timed by the element, and
+ * sifting there, then raising it.
  */
 img.wading.feeding {
   animation:
@@ -180,9 +186,10 @@ img.wading.feeding {
 
 img.wading.feeding.stirring {
   animation:
-    treading 400ms steps(2, jump-none) 3,
-    feeding 400ms step-end 1200ms forwards,
-    sifting 700ms steps(2, jump-none) 1600ms infinite;
+    treading 400ms steps(2, jump-none) var(--treads),
+    feeding 400ms step-end calc(var(--treads) * 400ms) forwards,
+    sifting 700ms steps(2, jump-none) calc(var(--treads) * 400ms + 400ms)
+      infinite;
 }
 
 img.wading.feeding-end {
@@ -190,11 +197,24 @@ img.wading.feeding-end {
 }
 
 @keyframes walking {
-  from {
+  0% {
+    object-position: calc(-2 * var(--frame)) 0;
+  }
+  16.667% {
+    object-position: calc(-34 * var(--frame)) 0;
+  }
+  33.333% {
+    object-position: calc(-3 * var(--frame)) 0;
+  }
+  50% {
     object-position: 0 0;
   }
-  to {
-    object-position: calc(-3 * var(--frame)) 0;
+  66.667% {
+    object-position: calc(-1 * var(--frame)) 0;
+  }
+  83.333%,
+  100% {
+    object-position: calc(-33 * var(--frame)) 0;
   }
 }
 
@@ -506,7 +526,7 @@ img.wading.feeding-end {
 
 @keyframes feeding-end {
   0% {
-    object-position: calc(-13 * var(--frame)) 0;
+    object-position: calc(-35 * var(--frame)) 0;
   }
   25% {
     object-position: calc(-12 * var(--frame)) 0;
@@ -640,7 +660,7 @@ img.wading.feeding-end {
 
 @keyframes settling-feeding {
   0% {
-    object-position: calc(-13 * var(--frame)) 0;
+    object-position: calc(-35 * var(--frame)) 0;
   }
   25% {
     object-position: calc(-12 * var(--frame)) 0;

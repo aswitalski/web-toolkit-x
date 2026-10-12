@@ -10,7 +10,7 @@ import {
   POND_WIDTH,
   WATER_DEPTH,
 } from '../terrain.js'
-import type { Cloud as CloudData, World } from '../types.js'
+import type { Cloud as CloudData, Mud, World } from '../types.js'
 
 /* The clip path of the outline, in sprite pixels. */
 const toPolygon = (points: [number, number][], pixel: number) =>
@@ -128,12 +128,37 @@ export const Clouds = ({ world, onClick }: CloudsProps): Template => [
   ),
 ]
 
-interface WaterProps {
+interface MudCloudProps {
+  cloud: Mud
   pixel: number
 }
 
-/* The water in the pond, in front of the flemmings, covering their legs. */
-export const Water = ({ pixel }: WaterProps): Template => [
+/* A cloud of mud stirred up from the bottom, spreading and settling. */
+const MudCloud = ({
+  cloud: { x, depth, stirring },
+  pixel,
+}: MudCloudProps): Template => [
+  'span',
+  {
+    class: 'mud',
+    style: {
+      left: [(x - POND_LEFT) * pixel, 'px'],
+      bottom: [(WATER_DEPTH - depth) * pixel, 'px'],
+      '--stirring': [stirring, 'ms'],
+    },
+  },
+]
+
+interface WaterProps {
+  pixel: number
+  mud: Mud[]
+}
+
+/*
+ * The water in the pond, in front of the flemmings, covering their legs, with
+ * the mud they stir up in it.
+ */
+export const Water = ({ pixel, mud }: WaterProps): Template => [
   'div',
   {
     class: 'water',
@@ -145,6 +170,7 @@ export const Water = ({ pixel }: WaterProps): Template => [
       height: [WATER_DEPTH * pixel, 'px'],
     },
   },
+  ...mud.map(cloud => [MudCloud, { key: cloud.id, cloud, pixel }] as const),
 ]
 
 interface LandscapeProps {

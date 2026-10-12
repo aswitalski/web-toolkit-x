@@ -15,7 +15,14 @@ import {
   getWaterDepth,
   WATER_DEPTH,
 } from './terrain.js'
-import type { Activity, Cloud, Flemming, GameState, World } from './types.js'
+import type {
+  Activity,
+  Cloud,
+  Flemming,
+  GameState,
+  Mud,
+  World,
+} from './types.js'
 
 /*
  * The acceleration of falling, in sprite pixels per second squared, up to
@@ -25,8 +32,13 @@ import type { Activity, Cloud, Flemming, GameState, World } from './types.js'
 const GRAVITY = 300
 const FLAPPING_SPEED = 48
 const DIVING_SPEED = 128
-/* A pixel per frame of the walk, matching the stride. */
-const WALKING_SPEED = 12.5
+/*
+ * The milliseconds of walking a pixel, a frame of the stride each, as styled,
+ * so that the foot it stands on stays in its place, and the frames of the
+ * stride, from the legs together.
+ */
+const PIXEL_TIME = 80
+const STRIDE_FRAMES = 6
 
 /* The seconds of turning around, the head first, then the body. */
 const TURNING = 0.2
@@ -68,6 +80,12 @@ const WADING_DEPTH = WATER_DEPTH - 2
 
 /* The milliseconds of a ripple splashing, a bit longer than styled. */
 const RIPPLE_TIME = 1200
+
+/*
+ * The milliseconds of the mud settling once stirred up, a bit longer than
+ * styled.
+ */
+const MUD_SETTLING = 2600
 
 /* The head of a flemming dipped in the water, from the left of its frame. */
 const HEAD_X = 13
@@ -143,7 +161,7 @@ const isBlocked = (flemming: Flemming, flemmings: Flemming[]) =>
 /*
  * Walks in the current direction, along the ground and into the water,
  * turning around at the window borders, or to walk back when beyond,
- * and at the blockers.
+ * and at the blockers, and stops once the step is finished, when stopped.
  */
 const walk = (
   flemming: Flemming,
@@ -153,7 +171,11 @@ const walk = (
 ) => {
   const { position } = flemming
   const fitting = fits(flemming, world)
-  const step = WALKING_SPEED * seconds
+  // a pixel at the end of each frame of the stride, started with the walk
+  const time = flemming.walkingFor
+  flemming.walkingFor += seconds * 1000
+  const step =
+    Math.floor(flemming.walkingFor / PIXEL_TIME) - Math.floor(time / PIXEL_TIME)
   position.x += flemming.direction === 'right' ? step : -step
   const max = world.width - FRAME_WIDTH
   if (flemming.direction === 'right' && position.x >= max) {
@@ -166,6 +188,12 @@ const walk = (
     turnAround(flemming)
   }
   position.y = getStandingLevel(position.x)
+  // stopped once the step is finished, with the legs together, as it starts
+  const frame = Math.floor(flemming.walkingFor / PIXEL_TIME) % STRIDE_FRAMES
+  if (flemming.activity === 'walking' && flemming.next && frame === 0) {
+    flemming.next = null
+    stop(flemming)
+  }
 }
 
 const turnAround = (flemming: Flemming) => {
@@ -175,8 +203,12 @@ const turnAround = (flemming: Flemming) => {
 
 /* Walks on, or stands or wades when stopped in the meantime. */
 const walkOn = (flemming: Flemming) => {
-  flemming.activity = flemming.next ?? 'walking'
-  flemming.next = null
+  if (flemming.next) {
+    flemming.next = null
+    stop(flemming)
+  } else {
+    flemming.activity = 'walking'
+  }
 }
 
 /* Walks on the other way once turned around. */
@@ -189,7 +221,7 @@ const turn = (flemming: Flemming, seconds: number) => {
 }
 
 /* Releases a blocker, folding its wings before walking on the same way. */
-const unblock = (flemming: Flemming, time: number | null) => {
+const unblock = (flemming: Flemming, time: number) => {
   flemming.activity = 'unblocking'
   flemming.timeLeft = UNBLOCKING
   flemming.releasedAt = time
@@ -354,6 +386,7 @@ const createFlemming = (
   direction: 'right',
   position: { x, y },
   velocity: 0,
+  walkingFor: 0,
   headDown: false,
   timeLeft: 0,
   next: null,
@@ -403,6 +436,10 @@ const GameCommands = {
       } else if (flemming.activity === 'settling') {
         wait(flemming, seconds)
       }
+      // the stride starts anew whenever it walks again
+      if (flemming.activity !== 'walking' && flemming.walkingFor) {
+        flemming.walkingFor = 0
+      }
       if (isInWater(flemming) !== wasInWater) {
         addRipple(this, flemming, FEET_X, wasInWater)
       }
@@ -413,6 +450,11 @@ const GameCommands = {
       this.ripples = this.ripples.filter(
         ripple => time - ripple.time <= RIPPLE_TIME,
       )
+    }
+    const settled = (cloud: Mud) =>
+      time - cloud.time > cloud.stirring + MUD_SETTLING
+    if (this.mud.some(settled)) {
+      this.mud = this.mud.filter(cloud => !settled(cloud))
     }
   },
 
@@ -433,6 +475,23 @@ const GameCommands = {
     }
   },
 
+  /*
+   * Clouds the water with the mud a flemming stirs up, treading it for the
+   * milliseconds.
+   */
+  stir(id: number, stirring: number) {
+    const flemming = this.flemmings.find(flemming => flemming.id === id)
+    if (flemming) {
+      this.mud.push({
+        id: Math.max(0, ...this.mud.map(cloud => cloud.id)) + 1,
+        x: Math.round(flemming.position.x) + FEET_X,
+        depth: getWaterDepth(flemming.position.x),
+        time: this.time ?? 0,
+        stirring,
+      })
+    }
+  },
+
   /* Ripples the water where a flemming dips its head in it. */
   dip(id: number) {
     const flemming = this.flemmings.find(flemming => flemming.id === id)
@@ -445,14 +504,12 @@ const GameCommands = {
 
   /*
    * Stops all the walking flemmings, wading in the water deep enough, and
-   * the ones about to walk on, once they have turned around, folded the wings
-   * or settled.
+   * the ones about to walk on, once they have finished their steps, turned
+   * around, folded the wings or settled.
    */
   stopAll() {
     for (const flemming of this.flemmings) {
-      if (flemming.activity === 'walking') {
-        stop(flemming)
-      } else if (isWalkingOn(flemming)) {
+      if (flemming.activity === 'walking' || isWalkingOn(flemming)) {
         flemming.next = getStopped(flemming)
       }
     }
@@ -476,19 +533,21 @@ const GameCommands = {
   },
 
   /*
-   * Stops a walking flemming, wading in the water, or lets it walk on the
-   * same way, once it has finished what it does, also a blocker, ignoring
+   * Stops a walking flemming once it has finished its step, wading in the
+   * water, or lets it walk on, also when clicked again before, or the same
+   * way once it has finished what it does, also a blocker, ignoring
    * the ones diving, turning around, folding the wings or settling, and makes
-   * a falling one fold its wings and dive.
+   * a falling one fold its wings and dive, at the time of the click.
    */
-  toggle(id: number) {
+  toggle(id: number, time: number) {
     const flemming = this.flemmings.find(flemming => flemming.id === id)
     if (flemming?.activity === 'falling') {
       flemming.activity = 'diving'
     } else if (flemming?.activity === 'walking') {
-      stop(flemming)
+      // stops once the step is finished, or walks on when clicked again
+      flemming.next = flemming.next ? null : getStopped(flemming)
     } else if (flemming?.activity === 'blocking') {
-      unblock(flemming, this.time)
+      unblock(flemming, time)
     } else if (
       flemming?.activity === 'standing' ||
       flemming?.activity === 'wading' ||
@@ -502,9 +561,9 @@ const GameCommands = {
    * Makes a flemming a blocker, on a double-click, once it has finished what
    * it does, unless its first click has just released it from blocking,
    * ignoring the ones in the air, turning around or folding the wings, and
-   * lets a blocker walk on.
+   * lets a blocker walk on, at the time of the click.
    */
-  block(id: number) {
+  block(id: number, time: number) {
     const flemming = this.flemmings.find(flemming => flemming.id === id)
     if (!flemming) {
       return
@@ -514,15 +573,16 @@ const GameCommands = {
     const released =
       flemming.activity === 'walking' &&
       releasedAt !== null &&
-      (this.time ?? 0) - releasedAt < DOUBLE_CLICK
+      time - releasedAt < DOUBLE_CLICK
     if (flemming.activity === 'blocking') {
-      unblock(flemming, this.time)
+      unblock(flemming, time)
     } else if (flemming.activity === 'settling') {
       flemming.next = 'blocking'
       flemming.flagGroup = null
     } else if (flemming.activity === 'walking') {
       if (!released) {
         flemming.activity = 'blocking'
+        flemming.next = null
       }
     } else if (
       flemming.activity === 'standing' ||

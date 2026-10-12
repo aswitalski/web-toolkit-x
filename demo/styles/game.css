@@ -149,6 +149,57 @@ div.water {
 }
 
 /*
+ * The mud stirred up from the bottom by a flemming treading it, as pixels
+ * spreading and rising around its feet with each tread, then settling, fading.
+ */
+div.water span.mud {
+  --mud: rgb(112 80 50 / 0.5);
+  animation:
+    stirring var(--stirring) step-end forwards,
+    settling-mud 2400ms steps(6, jump-end) var(--stirring) forwards;
+  background: var(--mud);
+  height: var(--pixel);
+  position: absolute;
+  width: var(--pixel);
+}
+
+/* The pixels of the mud around the one at the feet, by the treads. */
+@keyframes stirring {
+  0% {
+    box-shadow: none;
+  }
+  20% {
+    box-shadow:
+      calc(-1 * var(--pixel)) 0 var(--mud),
+      var(--pixel) 0 var(--mud);
+  }
+  40% {
+    box-shadow:
+      calc(-2 * var(--pixel)) 0 var(--mud),
+      calc(-1 * var(--pixel)) 0 var(--mud),
+      var(--pixel) 0 var(--mud),
+      calc(2 * var(--pixel)) 0 var(--mud);
+  }
+  60%,
+  100% {
+    box-shadow:
+      calc(-2 * var(--pixel)) 0 var(--mud),
+      calc(-1 * var(--pixel)) 0 var(--mud),
+      var(--pixel) 0 var(--mud),
+      calc(2 * var(--pixel)) 0 var(--mud),
+      calc(-1 * var(--pixel)) calc(-1 * var(--pixel)) var(--mud),
+      0 calc(-1 * var(--pixel)) var(--mud),
+      var(--pixel) calc(-1 * var(--pixel)) var(--mud);
+  }
+}
+
+@keyframes settling-mud {
+  to {
+    opacity: 0;
+  }
+}
+
+/*
  * The splashes on the water surface in the pond, behind the flemmings:
  * droplets jumping up and falling back, and a pair of light dashes spreading
  * a pixel at a time from where they start, and fading.
