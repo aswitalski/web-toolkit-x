@@ -65,7 +65,7 @@ class Bird extends Component<BirdProps> {
 
   render(): Template {
     const {
-      flemming: { activity, direction, position, hiddenAbove },
+      flemming: { activity, direction, stride, position, hiddenAbove },
       pixel,
     } = this.props
     return [
@@ -88,6 +88,7 @@ class Bird extends Component<BirdProps> {
         {
           activity,
           direction,
+          stride,
           onDip: this.onDip,
           onStir: this.onStir,
           onHeadChange: this.onHeadChange,

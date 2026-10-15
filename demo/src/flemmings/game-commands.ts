@@ -33,9 +33,9 @@ const GRAVITY = 300
 const FLAPPING_SPEED = 48
 const DIVING_SPEED = 128
 /*
- * The milliseconds of walking a pixel, a frame of the stride each, as styled,
- * so that the foot it stands on stays in its place, and the frames of the
- * stride, from the legs together.
+ * The milliseconds of walking a pixel, showing a frame of the stride each, so
+ * that the foot it stands on stays in its place, and the frames of the stride,
+ * from the legs together, as many as drawn.
  */
 const PIXEL_TIME = 80
 const STRIDE_FRAMES = 6
@@ -188,9 +188,10 @@ const walk = (
     turnAround(flemming)
   }
   position.y = getStandingLevel(position.x)
-  // stopped once the step is finished, with the legs together, as it starts
-  const frame = Math.floor(flemming.walkingFor / PIXEL_TIME) % STRIDE_FRAMES
-  if (flemming.activity === 'walking' && flemming.next && frame === 0) {
+  // shown with the pixel walked, and stopped once the step is finished, with
+  // the legs together, as it starts
+  flemming.stride = Math.floor(flemming.walkingFor / PIXEL_TIME) % STRIDE_FRAMES
+  if (flemming.activity === 'walking' && flemming.next && !flemming.stride) {
     flemming.next = null
     stop(flemming)
   }
@@ -387,6 +388,7 @@ const createFlemming = (
   position: { x, y },
   velocity: 0,
   walkingFor: 0,
+  stride: 0,
   headDown: false,
   timeLeft: 0,
   next: null,
@@ -439,6 +441,7 @@ const GameCommands = {
       // the stride starts anew whenever it walks again
       if (flemming.activity !== 'walking' && flemming.walkingFor) {
         flemming.walkingFor = 0
+        flemming.stride = 0
       }
       if (isInWater(flemming) !== wasInWater) {
         addRipple(this, flemming, FEET_X, wasInWater)

@@ -31,6 +31,12 @@ const SETTLING_FRAMES: Record<Settling, number[]> = {
 const SETTLING_FRAME_TIME = 50
 
 /*
+ * The frames of the stride, from the legs together, one for each pixel
+ * walked, picked by the game.
+ */
+const WALKING_FRAMES = [2, 34, 3, 0, 1, 33]
+
+/*
  * The frames settled from as others: sifting the mud, as the head under the
  * water raised from it, breathing asleep and nibbling the wing. Treading the
  * mud isn't settled from, as it stands on both legs.
@@ -227,6 +233,7 @@ class Flemming extends WebComponent<
     const {
       activity,
       direction,
+      stride,
       idle,
       ending,
       oneLeg,
@@ -256,6 +263,7 @@ class Flemming extends WebComponent<
         style: {
           '--plumage': plumage,
           '--treads': treads,
+          '--walking-frame': WALKING_FRAMES[stride],
           // settling from the frame it showed
           animationDelay: skipped > 0 && [-skipped, 'ms'],
         },

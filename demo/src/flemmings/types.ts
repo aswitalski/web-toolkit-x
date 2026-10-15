@@ -44,6 +44,8 @@ export interface Flemming {
   velocity: number
   /* The milliseconds it has walked since it started, for its stride. */
   walkingFor: number
+  /* The frame of its stride, from the legs together, shown as walked. */
+  stride: number
   /* Feeding, sleeping or preening, not flagging the head with the others. */
   headDown: boolean
   /*
@@ -88,6 +90,8 @@ export interface Flemming {
 export interface FlemmingProps {
   activity: Activity
   direction: Direction
+  /* The frame of the stride when walking, timed by the game. */
+  stride: number
   onDip: () => void
   onStir: (time: number) => void
   onHeadChange: (down: boolean) => void

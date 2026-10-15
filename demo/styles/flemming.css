@@ -37,11 +37,11 @@ img.left {
 }
 
 /*
- * walking from the legs together, a frame for each pixel walked, every 80ms as
- * timed by the game, so that the foot it stands on stays in its place
+ * walking, the frame of the stride set by the game for each pixel walked, so
+ * that the foot it stands on stays in its place
  */
 img.walking {
-  animation: walking 480ms step-end infinite;
+  object-position: calc(-1 * var(--walking-frame, 2) * var(--frame)) 0;
 }
 
 /* falling slowly flapping the wings, or diving with them folded */
@@ -194,28 +194,6 @@ img.wading.feeding.stirring {
 
 img.wading.feeding-end {
   animation: feeding-end 400ms step-end forwards;
-}
-
-@keyframes walking {
-  0% {
-    object-position: calc(-2 * var(--frame)) 0;
-  }
-  16.667% {
-    object-position: calc(-34 * var(--frame)) 0;
-  }
-  33.333% {
-    object-position: calc(-3 * var(--frame)) 0;
-  }
-  50% {
-    object-position: 0 0;
-  }
-  66.667% {
-    object-position: calc(-1 * var(--frame)) 0;
-  }
-  83.333%,
-  100% {
-    object-position: calc(-33 * var(--frame)) 0;
-  }
 }
 
 @keyframes falling {

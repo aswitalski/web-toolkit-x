@@ -72,14 +72,15 @@ element with a single flemming. It knows what it looks like and what it does whe
 looking back, preening, saluting, standing on one leg, sleeping or feeding. It doesn't
 know where it is, nor anything about the world or the other flemmings.
 
-Its props are what it does and which way it faces, and the [callbacks](#callbacks) telling
-the game what only the flemming knows:
+Its props are what it does, which way it faces, the frame of its stride, and the
+[callbacks](#callbacks) telling the game what only the flemming knows:
 
 ```ts
-{ activity: 'walking', direction: 'right', onDip, onStir, onHeadChange, onReady }
+{ activity: 'walking', direction: 'right', stride: 2, onDip, onStir, onHeadChange, onReady }
 ```
 
-The activity is one of the [activities](#activities), and the direction `left` or `right`.
+The activity is one of the [activities](#activities), the direction `left` or `right`, and
+the stride the frame from 0 to 5, from the legs together, as timed by the game.
 
 It has a single command, `advance`, in
 [`flemming-commands.ts`](../components/flemming-commands.ts), choosing what to do next when
@@ -100,9 +101,9 @@ rendered by its `render()` method, which sees it as `this.props`.
 The state of the game, `GameState`, holds:
 
 - `world`: the size of the window and the size of a sprite pixel
-- `flemmings`: each one with its position, falling speed, activity and direction,
-  and the timing of what it does, e.g. the time left of turning around, the time its group
-  flags the heads, or the activity it does once settled
+- `flemmings`: each one with its position, falling speed, activity, direction and the
+  frame of its stride, and the timing of what it does, e.g. the time left of turning
+  around, the time its group flags the heads, or the activity it does once settled
 - `ripples`: the splashes on the water, removed once over
 - `mud`: the clouds of mud stirred up in the water, removed once settled
 - `disabledClouds`: the times the clicked clouds drop flemmings again
@@ -133,9 +134,9 @@ when it is created and kept, and what it does when bored:
 
 It is a transient state. Whenever the props of a flemming change, `getUpdatedState()`
 gets the new props and the current state, and decides what to keep. With the same
-activity, it keeps its state and takes the new props, the direction and the callbacks.
-With another activity, it starts afresh but for its plumage, so a walking flemming never
-holds a leg up from when it stood.
+activity, it keeps its state and takes the new props, the direction, the frame of the
+stride and the callbacks. With another activity, it starts afresh but for its plumage, so
+a walking flemming never holds a leg up from when it stood.
 
 ## Commands
 
@@ -309,8 +310,11 @@ A flemming renders an `img` of [`flemming.svg`](../../../flemming.svg), a 576×2
 36 frames, 16×24 each, drawn with a `crispEdges` path for each colour. Its classes, the
 activity, the direction and what it does, pick the CSS animation in
 [`flemming.css`](../../../styles/flemming.css), showing the frames by shifting the image
-with `object-position`, in `steps()` or `step-end` keyframes. A flemming facing left is
-mirrored with `scale: -1 1`, and its plumage set with a `brightness` filter.
+with `object-position`, in `steps()` or `step-end` keyframes. Walking isn't animated, its
+frame is the one of the stride picked by the game, set with `--walking-frame`, so it shows
+the frame of each pixel walked, in step even after a long frame or a background tab, when
+the game moves the flemmings by at most 100ms. A flemming facing left is mirrored with
+`scale: -1 1`, and its plumage set with a `brightness` filter.
 
 | Frames | Shows                                                     |
 | ------ | --------------------------------------------------------- |
@@ -362,19 +366,21 @@ The behaviour is tuned with the constants at the top of each file:
 - [`flemming-commands.ts`](../components/flemming-commands.ts): the resting, wading and
   idle times, the weights, stirring and the plumage
 - [`flemming.ts`](../components/flemming.ts): the times of dipping and of a tread, the
-  frames of settling, and the frames held, settled from as the ones before them
+  frames of walking and of settling, and the frames held, settled from as the ones before
+  them
 - [`terrain.ts`](../terrain.ts): the sizes of the frame, the ground and the pond, and the
   height of a flemming, setting the size of a sprite pixel
 - [`clouds.ts`](../clouds.ts): the shapes and places of the clouds, in two tiles, and the
   height of their band
 
-Some of them repeat the times of the CSS animations, or depend on them, and have to match:
+Some of them repeat the times of the CSS animations or the frames of the sprite, or depend
+on them, and have to match:
 
 - `TURNING`, `UNBLOCKING` and `FLAGGING_TURN`: the 200ms of turning around, the 300ms of
   blocking and unblocking, and the 550ms of flagging
-- `PIXEL_TIME`: a pixel walked for each 80ms frame of the stride, 6 of them in 480ms
 - `RIPPLE_TIME` and `MUD_SETTLING`: at least the 1000ms of the ripples and the 2400ms of
   the mud settling once stirred up
 - `DURATIONS.saluting`: the 1600ms of saluting
-- in `flemming.ts`: the times of dipping and of a tread, the frames of settling, and the
-  held frames of sifting, breathing and nibbling
+- `STRIDE_FRAMES`: the 6 frames of walking in `flemming.ts`
+- in `flemming.ts`: the times of dipping and of a tread, the frames of walking and of
+  settling, and the held frames of sifting, breathing and nibbling
