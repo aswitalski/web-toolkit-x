@@ -1,0 +1,80 @@
+/*
+ * The scenes in one column, or two on a wide window, each window scaled by
+ * a whole number of CSS pixels for each sprite pixel: 2, 3 or 4. The widths
+ * of the page follow from the 320px of a window before it is scaled, the
+ * gap and the padding.
+ */
+:host {
+  --columns: 1;
+  --scale: 1;
+  color: #d9def0;
+  display: block;
+  font:
+    15px/1.5 system-ui,
+    sans-serif;
+  padding: 32px 16px 48px;
+}
+
+@media (min-width: 512px) {
+  :host {
+    --scale: 1.5;
+  }
+}
+
+@media (min-width: 1040px) {
+  :host {
+    --columns: 2;
+  }
+}
+
+@media (min-width: 1800px) {
+  :host {
+    --scale: 2;
+  }
+}
+
+section {
+  margin: 0 auto;
+  width: fit-content;
+}
+
+header {
+  margin-bottom: 32px;
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 12px 0 2px;
+}
+
+p {
+  color: #98a3c7;
+  margin: 0;
+}
+
+ul {
+  display: grid;
+  gap: 48px;
+  grid-template-columns: repeat(var(--columns), max-content);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* as wide as the window of the scene, set by the page, scaled */
+li {
+  width: calc(var(--view-width) * var(--scale));
+}
+
+f-scene {
+  border-radius: 4px;
+  height: calc(var(--view-height) * var(--scale));
+  overflow: hidden;
+}

@@ -2,6 +2,7 @@ import type { CommandsAPI } from 'toolkit'
 
 import { type Range, triangular, uniform } from '../random.js'
 import type {
+  Act,
   Activity,
   FlemmingElementState,
   FlemmingProps,
@@ -41,7 +42,7 @@ const DURATIONS: Record<Idle, Range> = {
 }
 
 /* What a bored standing flemming may do, with the weights of the chances. */
-type Choice = Idle | 'switching-legs'
+type Choice = Exclude<Act['do'], 'resting'>
 const ON_TWO_LEGS: [Choice, number][] = [
   ['looking-back', 3],
   ['preening', 2],
@@ -76,33 +77,106 @@ export const getPlumage = () => {
   return (darkest + steps) / 1000
 }
 
-/* The state at the start of an activity, resting on both legs. */
+/*
+ * What it does next, by chance: ends what it did, resting, or rests and does
+ * something else, feeding when wading, almost always stirring up the mud
+ * first, or when standing switching the legs it stands on, or doing what it
+ * can on them.
+ */
+const chooseAct = (state: FlemmingElementState): Act => {
+  if (state.idle && !state.ending) {
+    return { do: 'resting', seconds: getRestingTime(state.activity) }
+  }
+  const choice =
+    state.activity === 'wading'
+      ? 'feeding'
+      : choose(state.legs === 'one' ? ON_ONE_LEG : ON_TWO_LEGS)
+  if (choice === 'switching-legs') {
+    return { do: choice, seconds: getRestingTime(state.activity) }
+  }
+  if (choice === 'feeding') {
+    const stirring = Math.random() < STIRRING_CHANCE
+    const treads = stirring ? choose(TREADS) : 0
+    return { do: choice, seconds: uniform(DURATIONS.feeding), treads }
+  }
+  return { do: choice, seconds: triangular(DURATIONS[choice]) }
+}
+
+/* The next act of its routine, starting it over after the last one. */
+const takeAct = (state: FlemmingElementState, routine: Act[]): Act => {
+  const act = routine[state.nextAct]!
+  state.nextAct = (state.nextAct + 1) % routine.length
+  return act
+}
+
+/*
+ * Does the act for its seconds, ending what it did when resting, and
+ * stirring up the mud with the treads only before feeding.
+ */
+const perform = (state: FlemmingElementState, act: Act) => {
+  state.idleTime = act.seconds
+  if (act.do === 'resting') {
+    if (state.idle) {
+      state.ending = true
+      state.treads = 0
+    }
+    return
+  }
+  state.ending = false
+  if (act.do === 'switching-legs') {
+    state.idle = null
+    state.legs = state.legs === 'one' ? 'lowering' : 'one'
+  } else {
+    state.idle = act.do
+    state.treads = act.do === 'feeding' ? (act.treads ?? 0) : 0
+    if (state.legs === 'lowering') {
+      state.legs = 'two'
+    }
+  }
+}
+
+/*
+ * The state at the start of an activity, resting on both legs, ending what
+ * it did, if given, or else doing the first act of its routine when standing
+ * or wading.
+ */
 export const createElementState = (
   props: FlemmingProps,
   phase: number,
   plumage: number,
-): FlemmingElementState => ({
-  ...props,
-  plumage,
-  idle: null,
-  ending: null,
-  oneLeg: false,
-  loweringLeg: false,
-  treads: 0,
-  settling: null,
-  skipped: 0,
-  idleTime:
-    props.activity === 'wading'
-      ? uniform(FIRST_WADING)
-      : getRestingTime(props.activity),
-  phase,
-})
+  ending: Idle | null = null,
+): FlemmingElementState => {
+  const state: FlemmingElementState = {
+    ...props,
+    plumage,
+    idle: ending,
+    ending: !!ending,
+    legs: 'two',
+    treads: 0,
+    settling: null,
+    skipped: 0,
+    idleTime:
+      props.activity === 'wading'
+        ? uniform(FIRST_WADING)
+        : getRestingTime(props.activity),
+    nextAct: 0,
+    phase,
+  }
+  const { activity, routine } = props
+  if (
+    !ending &&
+    routine?.length &&
+    (activity === 'standing' || activity === 'wading')
+  ) {
+    perform(state, takeAct(state, routine))
+  }
+  return state
+}
 
 const FlemmingCommands = {
   /*
-   * Rests and does something else now and then: feeds when wading, almost always
-   * stirring up the mud first, and when standing switches the legs it stands
-   * on, or does what it can on them. Ignored when the phase it was timed for
+   * Rests and does something else now and then, the next act of its routine,
+   * or chosen by chance without one. Ignored when the phase it was timed for
    * has already changed.
    */
   advance(phase: number) {
@@ -110,32 +184,8 @@ const FlemmingCommands = {
       return
     }
     this.phase += 1
-    if (this.idle) {
-      this.ending = this.idle
-      this.idle = null
-      this.treads = 0
-      this.idleTime = getRestingTime(this.activity)
-      return
-    }
-    this.ending = null
-    this.loweringLeg = false
-    const choice =
-      this.activity === 'wading'
-        ? 'feeding'
-        : choose(this.oneLeg ? ON_ONE_LEG : ON_TWO_LEGS)
-    if (choice === 'switching-legs') {
-      this.loweringLeg = this.oneLeg
-      this.oneLeg = !this.oneLeg
-      this.idleTime = getRestingTime(this.activity)
-    } else {
-      this.idle = choice
-      this.idleTime =
-        choice === 'feeding'
-          ? uniform(DURATIONS.feeding)
-          : triangular(DURATIONS[choice])
-      const stirring = choice === 'feeding' && Math.random() < STIRRING_CHANCE
-      this.treads = stirring ? choose(TREADS) : 0
-    }
+    const { routine } = this
+    perform(this, routine?.length ? takeAct(this, routine) : chooseAct(this))
   },
 } satisfies CommandsAPI<FlemmingElementState>
 

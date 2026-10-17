@@ -28,6 +28,24 @@ export type Direction = 'left' | 'right'
 export type Idle =
   'looking-back' | 'preening' | 'saluting' | 'sleeping' | 'feeding'
 
+/*
+ * What a standing or wading flemming does next, for the seconds: rests, does
+ * something when bored, or switches legs, lifting one or putting it down,
+ * treading the mud before feeding, if at all.
+ */
+export type Act =
+  | {
+      do: Exclude<Idle, 'feeding'> | 'resting' | 'switching-legs'
+      seconds: number
+    }
+  | { do: 'feeding'; seconds: number; treads?: number }
+
+/*
+ * The legs a flemming stands on: both, one with the other tucked, or both
+ * while putting the tucked one down, until it does something else.
+ */
+export type Legs = 'two' | 'one' | 'lowering'
+
 /* A point in the world, in sprite pixels from its bottom left corner. */
 export interface Position {
   x: number
@@ -42,10 +60,11 @@ export interface Flemming {
   position: Position
   /* The falling speed, in sprite pixels per second. */
   velocity: number
-  /* The milliseconds it has walked since it started, for its stride. */
+  /*
+   * The milliseconds it has walked since it started, setting the frame of
+   * its stride.
+   */
   walkingFor: number
-  /* The frame of its stride, from the legs together, shown as walked. */
-  stride: number
   /* Feeding, sleeping or preening, not flagging the head with the others. */
   headDown: boolean
   /*
@@ -80,6 +99,8 @@ export interface Flemming {
   flagAt: number | null
   /* The bottom of the cloud it falls out of, hidden above it until out. */
   hiddenAbove: number | null
+  /* What it does when standing or wading, instead of choosing at random. */
+  routine?: Act[]
 }
 
 /*
@@ -96,6 +117,13 @@ export interface FlemmingProps {
   onStir: (time: number) => void
   onHeadChange: (down: boolean) => void
   onReady: () => void
+  /*
+   * What it does when standing or wading, instead of choosing at random, in
+   * a loop, which has to be possible each time: sleeping only on one leg,
+   * feeding only when wading, preening and saluting on two legs, looking back
+   * on either, and anything else only after resting or switching legs.
+   */
+  routine?: Act[]
 }
 
 /* What a settling flemming finishes, before doing something else. */
@@ -116,14 +144,14 @@ export type Settling =
 export interface FlemmingElementState extends FlemmingProps {
   /* The brightness of its plumage, from 8% darker to 40% lighter, kept. */
   plumage: number
-  /* What it does when bored, null when resting. */
+  /*
+   * What it does when bored, null before doing anything or after switching
+   * legs, and whether it is ending it, resting, until it does something else.
+   */
   idle: Idle | null
-  /* What it did, ending it until it does something else. */
-  ending: Idle | null
-  /* Standing on one leg, with the other one tucked. */
-  oneLeg: boolean
-  /* Putting the tucked leg down, until it does something else. */
-  loweringLeg: boolean
+  ending: boolean
+  /* The legs it stands on. */
+  legs: Legs
   /* The treads of stirring up the mud before feeding, none when not. */
   treads: number
   /*
@@ -134,13 +162,18 @@ export interface FlemmingElementState extends FlemmingProps {
   skipped: number
   /* The seconds until it does something else, or rests again. */
   idleTime: number
+  /* The next act of its routine, if it has one. */
+  nextAct: number
   /* Counts the changes, ignoring the timers set before the last one. */
   phase: number
 }
 
-/* The world in sprite pixels, as big as the window. */
+/*
+ * The world in sprite pixels, as big as the window, or as a scene of the
+ * inspection needs.
+ */
 export interface World {
-  /* The size of the window, changing when resized. */
+  /* Its size, changing when the window of the game is resized. */
   width: number
   height: number
   /* The size of a sprite pixel in CSS pixels, the same at any window size. */

@@ -1,5 +1,6 @@
 import { Component, type Template } from 'toolkit'
 
+import { getStride } from '../game-commands.js'
 import { FRAME_HEIGHT } from '../terrain.js'
 import type { Flemming as FlemmingData } from '../types.js'
 import Flemming from './flemming.js'
@@ -65,7 +66,14 @@ class Bird extends Component<BirdProps> {
 
   render(): Template {
     const {
-      flemming: { activity, direction, stride, position, hiddenAbove },
+      flemming: {
+        activity,
+        direction,
+        walkingFor,
+        position,
+        hiddenAbove,
+        routine,
+      },
       pixel,
     } = this.props
     return [
@@ -88,7 +96,8 @@ class Bird extends Component<BirdProps> {
         {
           activity,
           direction,
-          stride,
+          stride: getStride(walkingFor),
+          routine,
           onDip: this.onDip,
           onStir: this.onStir,
           onHeadChange: this.onHeadChange,

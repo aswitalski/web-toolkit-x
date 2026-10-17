@@ -12,6 +12,9 @@ wings ignore the clicks, and the ones finishing what they do ignore a single cli
 npm run demo
 ```
 
+The `inspect.html` page shows the standard situations side by side, each in a small
+window on a part of the world, played by the rules of the game and directed in a loop.
+
 ## Playing
 
 | Input                               | Effect                                                                          |

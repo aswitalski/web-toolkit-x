@@ -17,7 +17,9 @@ numbers in [`random.ts`](../random.ts):
   Component rendering them
 
 Game and World are in the game's directory, and the components they render in
-[`components`](../components).
+[`components`](../components). The Game shares its animation loop and the commands of the
+callbacks of the flemmings with the scenes of the [inspection](#inspection), in
+[`play.ts`](../play.ts).
 
 ### Game
 
@@ -55,8 +57,8 @@ and the callbacks of the game with its id.
 
 ### World
 
-The [World](../world.ts) plain component renders the scene from the world, the size of
-the window and of a sprite pixel, the splashes and the mud, with the flemmings given as its
+The [World](../world.ts) plain component renders the scene from the world, its size and
+the size of a sprite pixel, the splashes and the mud, with the flemmings given as its
 children, placed in front of the land and behind the clouds and the water. It takes the
 listeners of the clicks on the clouds and the ground from the game.
 
@@ -72,19 +74,21 @@ element with a single flemming. It knows what it looks like and what it does whe
 looking back, preening, saluting, standing on one leg, sleeping or feeding. It doesn't
 know where it is, nor anything about the world or the other flemmings.
 
-Its props are what it does, which way it faces, the frame of its stride, and the
-[callbacks](#callbacks) telling the game what only the flemming knows:
+Its props are what it does, which way it faces, the frame of its stride, optionally a
+[routine](#routines), and the [callbacks](#callbacks) telling the game what only the
+flemming knows:
 
 ```ts
 { activity: 'walking', direction: 'right', stride: 2, onDip, onStir, onHeadChange, onReady }
 ```
 
 The activity is one of the [activities](#activities), the direction `left` or `right`, and
-the stride the frame from 0 to 5, from the legs together, as timed by the game.
+the stride the frame from 0 to 5, from the legs together, as timed by the game, computed
+by its Bird from how long it has walked.
 
 It has a single command, `advance`, in
 [`flemming-commands.ts`](../components/flemming-commands.ts), choosing what to do next when
-bored.
+bored, or taking the next act of its routine.
 
 So the game doesn't have to care about the fine-grained details of each flemming, like
 which leg it stands on, whether it is asleep or how long it will preen. These are
@@ -101,9 +105,10 @@ rendered by its `render()` method, which sees it as `this.props`.
 The state of the game, `GameState`, holds:
 
 - `world`: the size of the window and the size of a sprite pixel
-- `flemmings`: each one with its position, falling speed, activity, direction and the
-  frame of its stride, and the timing of what it does, e.g. the time left of turning
-  around, the time its group flags the heads, or the activity it does once settled
+- `flemmings`: each one with its position, falling speed, activity, direction and how
+  long it has walked, setting the frame of its stride, and the timing of what it does,
+  e.g. the time left of turning around, the time its group flags the heads, or the
+  activity it does once settled
 - `ripples`: the splashes on the water, removed once over
 - `mud`: the clouds of mud stirred up in the water, removed once settled
 - `disabledClouds`: the times the clicked clouds drop flemmings again
@@ -115,7 +120,7 @@ size, so the flemmings keep their size at any window size.
 
 The game never reads the DOM, only the size of the window, from `innerWidth` and
 `innerHeight`. It knows where it renders each cloud, so a click tells it only the id of the
-cloud or the flemming clicked, and the time of a click on a cloud. The commands find the
+cloud or the flemming clicked, and the time of the click. The commands find the
 flemming in the state, and the cloud among the ones they place in the world again.
 
 ### Flemming
@@ -123,28 +128,33 @@ flemming in the state, and the cloud among the ones they place in the world agai
 The state of a flemming, `FlemmingElementState`, holds its props, its plumage, picked
 when it is created and kept, and what it does when bored:
 
-- `idle`: looking back, preening, saluting, sleeping or feeding, `null` when resting
-- `ending`: what it just did, turned back until it does something else
-- `oneLeg`, `loweringLeg`: standing on one leg, or putting the other one down
+- `idle`: looking back, preening, saluting, sleeping or feeding, `null` before any or
+  after switching legs
+- `ending`: ending it, turned back while resting, until it does something else
+- `legs`: `two`, `one` with the other tucked, or `lowering` the tucked one
 - `treads`: the treads of stirring up the mud before feeding, mostly 5, sometimes more
 - `idleTime`: the seconds until it does something else
 - `settling`, `skipped`: what it finishes when settling, e.g. putting the leg down, and
   the part of it skipped, already past the frame it shows
+- `nextAct`: the next act of its routine, if it has one
 - `phase`: counts the changes, so the timers set before the last one are ignored
 
 It is a transient state. Whenever the props of a flemming change, `getUpdatedState()`
 gets the new props and the current state, and decides what to keep. With the same
 activity, it keeps its state and takes the new props, the direction, the frame of the
 stride and the callbacks. With another activity, it starts afresh but for its plumage, so
-a walking flemming never holds a leg up from when it stood.
+a walking flemming never holds a leg up from when it stood. It turns its head back after
+flagging, or else does the first act of its routine, if it has one.
 
 ## Commands
 
 The state changes only in commands, plain methods changing the state given as `this` as if
 it was mutable, and in `getUpdatedState()`, when a flemming gets new props. Toolkit turns
 the changes of a command into a new immutable state and renders it, or does nothing when
-nothing changed. As commands can't call each other, the logic they share is in functions
-taking a flemming, like `stop()`, `settle()` or `unblock()`.
+nothing changed. As a command gets only the state, not the other commands, the logic they
+share is in functions taking a flemming, like `stop()`, `settle()` or `unblock()`. Being
+plain methods, the commands can still be called on a state directly, as the
+[inspection](#inspection) does with the ones of the game.
 
 Each command returns a promise resolving with `true` once it is executed, even when it
 changed nothing. Once a component is destroyed, its commands are ignored and resolve with
@@ -156,7 +166,8 @@ The components react to their lifecycle with these methods:
 
 - `onCreated()` and `onDestroyed()`: the game listens to the window resizes
 - `onAttached()`: the game drops the first flemming out of the leftmost cloud in the window
-  and starts the animation loop, and a flemming starts its timer
+  and starts the animation loop, a scene starts it too, and a flemming starts its timer,
+  and also feeds or tells the game its head is down, when its routine starts with it
 - `onUpdated()`: a flemming starts the timer of what it does next, and tells the game when
   its head goes down or up, when it stirs up the mud, when its head goes under the water,
   and once settled
@@ -247,8 +258,8 @@ turns around just before a blocker.
 
 ## Being bored
 
-What a standing or wading flemming does is up to the flemming alone. It rests, then does
-something, and rests again:
+What a standing or wading flemming does is up to the flemming alone, unless it is given a
+[routine](#routines). It rests, then does something, and rests again:
 
 - On two legs it looks back, preens, salutes or lifts a leg
 - On one leg it looks back, sleeps or puts the leg down
@@ -256,6 +267,31 @@ something, and rests again:
 
 The times of standing cluster around the middle of their ranges, while the ones of
 wading are uniformly random, so the flemmings wading together drift apart.
+
+### Routines
+
+A flemming may get a routine as an optional prop, telling it what to do instead, in a loop,
+as the [inspection](#inspection) page does to show each behaviour on cue. The game
+never gives one. Each act of a routine is what it does, for how many seconds, and the
+treads of stirring up the mud before feeding:
+
+```ts
+const routine: Act[] = [
+  { do: 'resting', seconds: 1.5 },
+  { do: 'switching-legs', seconds: 2 },
+  { do: 'sleeping', seconds: 7 },
+  { do: 'resting', seconds: 1.5 },
+  { do: 'switching-legs', seconds: 2 },
+]
+```
+
+The acts chosen by chance and the ones of a routine are done the same way, so settling, the
+callbacks and the timers work the same for both. A routine has to be possible in each loop,
+as switching legs lifts a leg or puts the tucked one down: sleeping only on one leg,
+feeding only when wading, preening and saluting on two legs, looking back on either, and
+anything else only after resting or switching legs. It starts over whenever the activity
+changes. After flagging, it starts once the head is turned back, after a rest as long as
+without a routine.
 
 ## Settling
 
@@ -296,7 +332,7 @@ its children, or of a component, its props and its children. They use:
 - keys for the lists of the flemmings, splashes, clouds and mud, so each keeps its node
 - styles with units, e.g. `width: [width * pixel, 'px']`, and custom properties, like
   `--pixel`, inherited into the shadow root of a flemming, `--plumage` and `--treads`
-- class lists and objects, e.g. `{ 'one-leg': oneLeg, stirring: treads > 0 }`
+- class lists and objects, e.g. `{ 'one-leg': legs === 'one', stirring: treads > 0 }`
 - `ariaLabel` for the clouds
 - `onClick` and `onDblClick` listeners, and callbacks as props
 
@@ -384,3 +420,49 @@ on them, and have to match:
 - `STRIDE_FRAMES`: the 6 frames of walking in `flemming.ts`
 - in `flemming.ts`: the times of dipping and of a tread, the frames of walking and of
   settling, and the held frames of sifting, breathing and nibbling
+
+## Inspection
+
+The [`inspect.html`](../../../inspect.html) page shows the standard situations side
+by side, each in a scene played by the rules of the game, from
+[`inspect`](../../inspect):
+
+- [Inspect](../../inspect/inspect.ts), a Web Component rendering the
+  `<f-inspect>` custom element, lists the scenes with their titles and what they show
+- [Scene](../../inspect/scene.ts), a Web Component rendering the `<f-scene>` custom
+  element, plays a game of its own, in a world as wide as the scene needs, and renders the
+  World with the Flock, as the Game does, in a window of 160×90 sprite pixels moved to the
+  part of the world it shows, ignoring the clicks
+- its commands, in [`scene-commands.ts`](../../inspect/scene-commands.ts), are the
+  ones of the game, with each `tick` calling the one of the game on its state, and then
+  directing the scene once the flemmings have moved
+- the [director](../../inspect/director.ts) casts the flemmings in their roles, clicks
+  them as a player would, calling `toggle` and `block` of the game on the state, lets the
+  ones walking out of the window go, and does the steps of the script, each once its time
+  has passed and the scene is ready for it, starting it over after the last one
+- the [scenes](../../inspect/scenes.ts) set the place, the cast and the script of each
+  situation, the flemmings standing or wading following their [routines](#routines), so
+  each behaviour shows on cue
+
+A script is a list of steps, e.g. stopping a flemming once it has walked past a point, and
+making it walk on once it has stood for a while:
+
+```ts
+steps: [
+  { after: PAUSE, do: state => cast(state, 'flemming', LAND + 24) },
+  {
+    when: isPast('flemming', LAND + 64),
+    do: state => click(state, 'flemming'),
+  },
+  {
+    after: 4000,
+    when: isDoing('flemming', 'standing'),
+    do: state => click(state, 'flemming'),
+  },
+  { when: isEmpty },
+]
+```
+
+The windows are placed by the pond, following it when it is tuned, and scaled with the
+width of the page, by 2, 3 or 4 CSS pixels for each sprite pixel, in one column, or in two
+on a wide page.

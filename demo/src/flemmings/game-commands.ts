@@ -40,6 +40,13 @@ const DIVING_SPEED = 128
 const PIXEL_TIME = 80
 const STRIDE_FRAMES = 6
 
+/*
+ * The frame of the stride, from the legs together, of a flemming walking for
+ * the milliseconds, shown with the pixel walked.
+ */
+export const getStride = (walkingFor: number) =>
+  Math.floor(walkingFor / PIXEL_TIME) % STRIDE_FRAMES
+
 /* The seconds of turning around, the head first, then the body. */
 const TURNING = 0.2
 
@@ -160,7 +167,7 @@ const isBlocked = (flemming: Flemming, flemmings: Flemming[]) =>
 
 /*
  * Walks in the current direction, along the ground and into the water,
- * turning around at the window borders, or to walk back when beyond,
+ * turning around at the borders of the world, or to walk back when beyond,
  * and at the blockers, and stops once the step is finished, when stopped.
  */
 const walk = (
@@ -188,10 +195,12 @@ const walk = (
     turnAround(flemming)
   }
   position.y = getStandingLevel(position.x)
-  // shown with the pixel walked, and stopped once the step is finished, with
-  // the legs together, as it starts
-  flemming.stride = Math.floor(flemming.walkingFor / PIXEL_TIME) % STRIDE_FRAMES
-  if (flemming.activity === 'walking' && flemming.next && !flemming.stride) {
+  // stopped once the step is finished, with the legs together, as it starts
+  if (
+    flemming.activity === 'walking' &&
+    flemming.next &&
+    !getStride(flemming.walkingFor)
+  ) {
     flemming.next = null
     stop(flemming)
   }
@@ -375,12 +384,15 @@ const startFlagging = (flemmings: Flemming[], time: number) => {
   }
 }
 
-/* A flemming falling from the position, hidden above the given height. */
-const createFlemming = (
+/*
+ * A flemming falling from the position, facing right, unless told otherwise,
+ * e.g. hidden above a height.
+ */
+export const createFlemming = (
   id: number,
   x: number,
   y: number,
-  hiddenAbove: number,
+  other: Partial<Flemming> = {},
 ): Flemming => ({
   id,
   activity: 'falling',
@@ -388,7 +400,6 @@ const createFlemming = (
   position: { x, y },
   velocity: 0,
   walkingFor: 0,
-  stride: 0,
   headDown: false,
   timeLeft: 0,
   next: null,
@@ -397,7 +408,8 @@ const createFlemming = (
   flagFor: 0,
   releasedAt: null,
   flagAt: null,
-  hiddenAbove,
+  hiddenAbove: null,
+  ...other,
 })
 
 /*
@@ -410,7 +422,9 @@ const dropOutOf = (state: GameState, cloud: Cloud) => {
   const max = state.world.width - FRAME_WIDTH
   const left = Math.min(Math.max(Math.round(x - FRAME_WIDTH / 2), 0), max)
   const bottom = getCloudBottom(state.world, cloud)
-  state.flemmings.push(createFlemming(id, left, bottom - 1, bottom))
+  state.flemmings.push(
+    createFlemming(id, left, bottom - 1, { hiddenAbove: bottom }),
+  )
 }
 
 const GameCommands = {
@@ -441,7 +455,6 @@ const GameCommands = {
       // the stride starts anew whenever it walks again
       if (flemming.activity !== 'walking' && flemming.walkingFor) {
         flemming.walkingFor = 0
-        flemming.stride = 0
       }
       if (isInWater(flemming) !== wasInWater) {
         addRipple(this, flemming, FEET_X, wasInWater)

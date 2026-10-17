@@ -56,21 +56,18 @@ const HELD_FRAMES: Partial<Record<number, number>> = {
 const getSettlingFrom = ({
   activity,
   idle,
-  ending,
-  oneLeg,
-  loweringLeg,
+  legs,
 }: FlemmingElementState): Settling | null => {
   if (activity === 'flagging') {
     return 'flagging'
   }
-  const done = idle ?? ending
-  if (done === 'looking-back') {
-    return oneLeg ? 'looking-back-on-one-leg' : 'looking-back'
+  if (idle === 'looking-back') {
+    return legs === 'one' ? 'looking-back-on-one-leg' : 'looking-back'
   }
-  if (done) {
-    return done
+  if (idle) {
+    return idle
   }
-  return oneLeg || loweringLeg ? 'one-leg' : null
+  return legs === 'two' ? null : 'one-leg'
 }
 
 /* The frame the image shows, by the position of the strip in it. */
@@ -118,16 +115,17 @@ const afterAnimationTime = (callback: () => void, ms: number) => {
 }
 
 /* The head down in the water, on the back or at the wing. */
-const isHeadDown = ({ idle }: FlemmingElementState) =>
-  idle === 'feeding' || idle === 'sleeping' || idle === 'preening'
+const isHeadDown = ({ idle, ending }: FlemmingElementState) =>
+  !ending && (idle === 'feeding' || idle === 'sleeping' || idle === 'preening')
 
 /*
  * A flemming showing the frames of its activity, facing its direction,
  * placed by the parent, with a plumage of its own. It chooses what it does
- * when standing or wading by itself, in its transient state, reset when
- * the activity changes, and tells the game when it puts its head under
- * the water, puts its head down or up, and once it has settled, finishing
- * what it did before doing something else, with the callbacks it is given.
+ * when standing or wading by itself, unless it follows a routine, in its
+ * transient state, reset when the activity changes, and tells the game when
+ * it puts its head under the water, puts its head down or up, and once it
+ * has settled, finishing what it did before doing something else, with the
+ * callbacks it is given.
  */
 class Flemming extends WebComponent<
   FlemmingElementState,
@@ -147,7 +145,18 @@ class Flemming extends WebComponent<
   getUpdatedState(props: FlemmingProps, state: FlemmingElementState) {
     const { activity } = props
     if (activity !== state.activity) {
-      const next = createElementState(props, state.phase + 1, state.plumage)
+      // turns the head back after flagging, as after looking back
+      const ending =
+        state.activity === 'flagging' &&
+        (activity === 'standing' || activity === 'wading')
+          ? 'looking-back'
+          : null
+      const next = createElementState(
+        props,
+        state.phase + 1,
+        state.plumage,
+        ending,
+      )
       if (activity === 'settling') {
         // from the frame shown, as the animation starts after the state
         Object.assign(
@@ -155,31 +164,24 @@ class Flemming extends WebComponent<
           getSettling(state, this.shadow?.querySelector('img')),
         )
       }
-      // turns the head back after flagging, as after looking back
-      if (
-        state.activity === 'flagging' &&
-        (activity === 'standing' || activity === 'wading')
-      ) {
-        next.ending = 'looking-back'
-      }
       return next
     }
     return { ...state, ...props }
   }
 
+  /* Starts what it does, also feeding or with its head down, by its routine. */
   onAttached() {
     this.schedule()
+    this.feed()
+    if (isHeadDown(this.props)) {
+      this.props.onHeadChange(true)
+    }
   }
 
   onUpdated(prevState: FlemmingElementState) {
     if (this.props.phase !== prevState.phase) {
       this.schedule()
-      if (this.props.idle === 'feeding') {
-        if (this.props.treads) {
-          this.props.onStir(this.props.treads * TREAD_TIME)
-        }
-        this.dip()
-      }
+      this.feed()
       if (this.props.activity === 'settling') {
         this.settle()
       }
@@ -187,6 +189,16 @@ class Flemming extends WebComponent<
     const down = isHeadDown(this.props)
     if (down !== isHeadDown(prevState)) {
       this.props.onHeadChange(down)
+    }
+  }
+
+  /* Stirs up the mud, if it treads it, and dips its head, when feeding. */
+  feed() {
+    if (this.props.idle === 'feeding' && !this.props.ending) {
+      if (this.props.treads) {
+        this.props.onStir(this.props.treads * TREAD_TIME)
+      }
+      this.dip()
     }
   }
 
@@ -236,8 +248,7 @@ class Flemming extends WebComponent<
       stride,
       idle,
       ending,
-      oneLeg,
-      loweringLeg,
+      legs,
       treads,
       settling,
       skipped,
@@ -247,16 +258,15 @@ class Flemming extends WebComponent<
       'img',
       {
         src: './flemming.svg',
-        alt: `Flemming ${idle ?? activity}`,
+        alt: `Flemming ${(!ending && idle) || activity}`,
         class: [
           activity,
           direction,
-          idle,
-          ending && `${ending}-end`,
+          ending ? `${idle}-end` : idle,
           settling && `from-${settling}`,
           {
-            'one-leg': oneLeg,
-            'lowering-leg': loweringLeg,
+            'one-leg': legs === 'one',
+            'lowering-leg': legs === 'lowering',
             stirring: treads > 0,
           },
         ],

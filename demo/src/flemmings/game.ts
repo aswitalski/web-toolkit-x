@@ -1,7 +1,8 @@
-import { type Template, WebComponent } from 'toolkit'
+import type { Template } from 'toolkit'
 
 import Flock from './components/flock.js'
 import GameCommands from './game-commands.js'
+import Play from './play.js'
 import { PIXEL } from './terrain.js'
 import type { GameState } from './types.js'
 import World from './world.js'
@@ -22,7 +23,7 @@ const createWorld = (): GameState['world'] => ({
 })
 
 /* The game, the flemmings moving in the window, updated on every frame. */
-class Game extends WebComponent<GameState, typeof GameCommands> {
+class Game extends Play {
   static elementName = 'f-game'
 
   static styles = ['styles/game.css']
@@ -59,44 +60,8 @@ class Game extends WebComponent<GameState, typeof GameCommands> {
     this.animate()
   }
 
-  /*
-   * Ticks on every frame, until the component is destroyed, going on also
-   * after a failed update, reporting its error.
-   */
-  animate() {
-    requestAnimationFrame(time => {
-      void this.commands.tick(time).then(
-        updated => {
-          if (updated) {
-            this.animate()
-          }
-        },
-        (error: unknown) => {
-          console.error(error)
-          this.animate()
-        },
-      )
-    })
-  }
-
   onCloudClick(id: string, time: number) {
     void this.commands.drop(id, time)
-  }
-
-  onDip(id: number) {
-    void this.commands.dip(id)
-  }
-
-  onStir(id: number, time: number) {
-    void this.commands.stir(id, time)
-  }
-
-  onReady(id: number) {
-    void this.commands.ready(id)
-  }
-
-  onHeadChange(id: number, down: boolean) {
-    void this.commands.setHeadDown(id, down)
   }
 
   /*

@@ -1,0 +1,16 @@
+/*
+ * The window on a part of the world, scaled by the page, taking no clicks,
+ * as the scene is directed by its script.
+ */
+div.view {
+  overflow: hidden;
+  pointer-events: none;
+  position: relative;
+  scale: var(--scale, 1);
+  transform-origin: 0 0;
+}
+
+/* the world moved to show the part of it seen through the window */
+div.camera {
+  height: 100%;
+}
